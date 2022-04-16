@@ -76,14 +76,31 @@ static Expression primary() {
 }
 
 #ifdef venom_debug
-static void print_expression(BinaryExpression *e) {
+static void print_expression(BinaryExpression *e, ExpressionKind kind) {
     printf("(");
     
-    if (e->lhs.kind != LITERAL) print_expression(e->lhs.data.binexp);
-    if (e->rhs.kind != LITERAL) print_expression(e->rhs.data.binexp);
+    if (e->lhs.kind != LITERAL) print_expression(e->lhs.data.binexp, e->lhs.kind);
+    if (e->rhs.kind != LITERAL) print_expression(e->rhs.data.binexp, e->rhs.kind);
 
     if (e->lhs.kind == LITERAL) {
         printf("%d ", e->lhs.data.intval);
+    }
+
+    switch (kind) {
+        case ADD:
+            printf("+ ");
+            break;
+        case SUB:
+            printf("- ");
+            break;
+        case MUL:
+            printf("* ");
+            break;
+        case DIV:
+            printf("/ ");
+            break;
+        default:
+            break;
     }
     
     if (e->rhs.kind == LITERAL) {
@@ -98,9 +115,7 @@ static void print_expression(BinaryExpression *e) {
 
 static void print_statement() {
     Expression e = expression();
-
-    print_expression(e.data.binexp);
-
+    print_expression(e.data.binexp, e.kind);
     consume(TOKEN_SEMICOLON);
 }
 
