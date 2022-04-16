@@ -79,7 +79,9 @@ Token get_token() {
     if (c == '\0') return make_token(TOKEN_EOF, 0);
     switch (c) {
         case '+': return make_token(TOKEN_PLUS, 1);
+        case '-': return make_token(TOKEN_MINUS, 1);
         case '*': return make_token(TOKEN_STAR, 1);
+        case '/': return make_token(TOKEN_SLASH, 1);
         case '(': return make_token(TOKEN_LEFT_PAREN, 1);
         case ')': return make_token(TOKEN_RIGHT_PAREN, 1);
         case ';': return make_token(TOKEN_SEMICOLON, 1);

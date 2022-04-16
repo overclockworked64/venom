@@ -16,10 +16,14 @@ static bool check(TokenType type) {
     return parser.current.type == type;
 }
 
-static bool match(TokenType type) {
-    if (!check(type)) return false;
-    advance();
-    return true;
+static bool match(int size, TokenType types[]) {
+    for (int i = 0; i < size; ++i) {
+        if (check(types[i])) {
+            advance();
+            return true;
+        }
+    }
+    return false;
 }
 
 static void consume(TokenType type) {
@@ -35,11 +39,23 @@ static Expression number() {
 
 static Expression primary();
 
+static ExpressionKind operator(Token token) {
+    switch (token.type) {
+        case TOKEN_PLUS:  return ADD;
+        case TOKEN_MINUS: return SUB;
+        case TOKEN_STAR:  return MUL;
+        case TOKEN_SLASH: return DIV;
+        default:
+            break;
+     }
+}
+
 static Expression factor() {
     Expression expr = primary();
-    while (match(TOKEN_STAR)) {
+    while (match(2, (TokenType[]) { TOKEN_STAR, TOKEN_SLASH } )) {
+        ExpressionKind kind = operator(parser.previous);
         Expression right = primary();
-        Expression result = { .kind=MUL, .data.binexp=malloc(sizeof(BinaryExpression)) };
+        Expression result = { .kind=kind, .data.binexp=malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -49,9 +65,10 @@ static Expression factor() {
 
 static Expression term() {
     Expression expr = factor();
-    while (match(TOKEN_PLUS)) {
+    while (match(2, (TokenType[]) { TOKEN_PLUS, TOKEN_MINUS } )) {
+        ExpressionKind kind = operator(parser.previous);
         Expression right = factor();
-        Expression result = { .kind=ADD, .data.binexp=malloc(sizeof(BinaryExpression)) };
+        Expression result = { .kind=kind, .data.binexp=malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -70,8 +87,8 @@ static Expression grouping() {
 }
 
 static Expression primary() {
-    if (match(TOKEN_NUMBER)) return number();
-    else if (match(TOKEN_LEFT_PAREN)) return grouping();
+    if (match(1, (TokenType[]) { TOKEN_NUMBER } )) return number();
+    else if (match(1, (TokenType[]) { TOKEN_LEFT_PAREN } )) return grouping();
     else exit(1);
 }
 
@@ -113,17 +130,19 @@ static void print_expression(BinaryExpression *e, ExpressionKind kind) {
 }
 #endif
 
-static void print_statement() {
-    Expression e = expression();
-    print_expression(e.data.binexp, e.kind);
+static Statement print_statement() {
+    Expression exp = expression();
+    print_expression(exp.data.binexp, exp.kind);
+    Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp };
     consume(TOKEN_SEMICOLON);
+    return stmt;
 }
 
-static void statement() {
-    if (match(TOKEN_PRINT)) print_statement();
+static Statement statement() {
+    if (match(1, (TokenType[]) { TOKEN_PRINT })) return print_statement();
 }
 
-void parse() {
+Statement parse() {
     advance();
-    statement();
+    return statement();
 }

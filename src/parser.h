@@ -29,6 +29,15 @@ typedef struct {
 
 Parser parser;
 
-void parse();
+typedef enum {
+    STATEMENT_PRINT,
+} StatementKind;
+
+typedef struct {
+    StatementKind kind;
+    Expression exp;
+} Statement;
+
+Statement parse();
 
 #endif
