@@ -10,6 +10,7 @@ typedef enum {
     OP_MUL,
     OP_DIV,
     OP_CONST,
+    OP_EXIT,
 } Opcode;
 
 void compile(Statement stmt);

@@ -49,4 +49,5 @@ void compile(Statement stmt) {
         }
         default: break;
     }
+    emit_op(OP_EXIT);
 }
