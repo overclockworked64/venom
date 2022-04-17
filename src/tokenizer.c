@@ -75,7 +75,7 @@ Token get_token() {
     skip_whitespace();
 
     char c = advance();
-    if (is_digit(c)) number();
+    if (is_digit(c)) return number();
     if (c == '\0') return make_token(TOKEN_EOF, 0);
     switch (c) {
         case '+': return make_token(TOKEN_PLUS, 1);
