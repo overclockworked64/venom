@@ -13,8 +13,6 @@ typedef struct {
 VM vm;
 
 void init_vm();
-int pop();
-void push(int value);
 void run();
 
 #endif

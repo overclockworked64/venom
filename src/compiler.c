@@ -4,7 +4,7 @@
 #include "vm.h"
 
 void init_chunk(BytecodeChunk *chunk) {
-    chunk->code = malloc(sizeof(char) * 255);
+    chunk->code = malloc(sizeof(chunk->code[0]) * 255);
     chunk->count = 0;
     chunk->ip = chunk->code;
 }
@@ -18,7 +18,7 @@ void emit_op(Opcode op) {
     compiling_chunk.code[compiling_chunk.count++] = op;
 }
 
-void compile_expression(BinaryExpression *exp, ExpressionKind kind) {
+void compile_expression(const BinaryExpression *exp, ExpressionKind kind) {
     if (exp->lhs.kind != LITERAL) compile_expression(exp->lhs.data.binexp, exp->lhs.kind);
     if (exp->rhs.kind != LITERAL) compile_expression(exp->rhs.data.binexp, exp->rhs.kind);
 

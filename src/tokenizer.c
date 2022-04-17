@@ -2,6 +2,12 @@
 #include <string.h>
 #include "tokenizer.h"
 
+typedef struct {
+    char *current;
+} Tokenizer;
+
+static Tokenizer tokenizer;
+
 void init_tokenizer(char *source) {
     tokenizer.current = source;
 }

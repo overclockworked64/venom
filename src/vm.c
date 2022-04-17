@@ -11,11 +11,11 @@ void init_vm() {
 }
 
 
-void push(int value) {
+static void push(int value) {
     vm.stack[vm.tos++] = value;
 }
 
-int pop() {
+static int pop() {
     return vm.stack[--vm.tos];
 }
 
