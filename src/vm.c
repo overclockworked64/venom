@@ -10,6 +10,10 @@ void init_vm() {
     vm.cpp = 0;
 }
 
+void free_vm() {
+    free(vm.cp);
+    free_chunk(&compiling_chunk);
+}
 
 static void push(int value) {
     vm.stack[vm.tos++] = value;

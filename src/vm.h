@@ -8,11 +8,12 @@ typedef struct {
     int tos;  /* top of stack */
     int *cp;  /* constant pool */
     int cpp;  /* constant pool pointer */
-} VM;
+} VM;   
 
 VM vm;
 
 void init_vm();
+void free_vm();
 void run();
 
 #endif

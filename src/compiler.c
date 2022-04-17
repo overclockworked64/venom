@@ -9,6 +9,10 @@ void init_chunk(BytecodeChunk *chunk) {
     chunk->ip = chunk->code;
 }
 
+void free_chunk(BytecodeChunk *chunk) {
+    free(chunk->code);
+}
+
 void emit_const(int constant) {
     vm.cp[vm.cpp++] = constant;
     compiling_chunk.code[compiling_chunk.count++] = vm.cpp - 1;

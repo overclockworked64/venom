@@ -24,5 +24,6 @@ typedef struct {
 BytecodeChunk compiling_chunk;
 
 void init_chunk(BytecodeChunk *chunk);
+void free_chunk(BytecodeChunk *chunk);
 
 #endif
