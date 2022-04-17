@@ -4,13 +4,14 @@
 #include "vm.h"
 
 void init_chunk(BytecodeChunk *chunk) {
-    chunk->code = malloc(sizeof(int) * 255);
+    chunk->code = malloc(sizeof(char) * 255);
     chunk->count = 0;
     chunk->ip = chunk->code;
 }
 
 void emit_const(int constant) {
-    compiling_chunk.code[compiling_chunk.count++] = constant;
+    vm.cp[vm.cpp++] = constant;
+    compiling_chunk.code[compiling_chunk.count++] = vm.cpp - 1;
 }
 
 void emit_op(Opcode op) {

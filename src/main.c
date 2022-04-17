@@ -4,8 +4,9 @@
 #include "vm.h"
 
 int main(int argc, char *argv[]) {
-    char *source = "print (1 - 2) * 3;";
+    char *source = "print 256 * 4;";
     init_tokenizer(source);
+    init_vm();
     compile(parse());
     run();
 }

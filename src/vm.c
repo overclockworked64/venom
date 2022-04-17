@@ -4,12 +4,19 @@
 #include "compiler.h"
 #include "vm.h"
 
+void init_vm() {
+    vm.cp = malloc(sizeof(int) * 1024);
+    vm.tos = 0;
+    vm.cpp = 0;
+}
+
+
 void push(int value) {
-    stack[tos++] = value;
+    vm.stack[vm.tos++] = value;
 }
 
 int pop() {
-    return stack[--tos];
+    return vm.stack[--vm.tos];
 }
 
 void run() {
@@ -19,7 +26,6 @@ do { \
     int a = pop(); \
     push(a op b); \
 } while (false);
-    tos = 0;
     while (true) {
         switch (*compiling_chunk.ip++) {
             case OP_PRINT: {
@@ -28,7 +34,7 @@ do { \
                 break;
             }
             case OP_CONST: {
-                push(*compiling_chunk.ip++);
+                push(vm.cp[*compiling_chunk.ip++]);
                 break;
             }
             case OP_ADD: BINARY_OP(+); break;
