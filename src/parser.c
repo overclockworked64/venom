@@ -7,6 +7,19 @@
 
 #define venom_debug
 
+typedef struct {
+    Token current;
+    Token previous;
+} Parser;
+
+static Parser parser;
+
+void free_ast(BinaryExpression *binexp) {
+    if (binexp->lhs.kind != LITERAL) free_ast(binexp->lhs.data.binexp);
+    if (binexp->rhs.kind != LITERAL) free_ast(binexp->rhs.data.binexp);
+    free(binexp);
+}
+
 static void advance() {
     parser.previous = parser.current;
     parser.current = get_token();

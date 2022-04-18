@@ -12,7 +12,6 @@ void init_vm() {
 
 void free_vm() {
     free(vm.cp);
-    free_chunk(&compiling_chunk);
 }
 
 static void push(int value) {
@@ -31,21 +30,21 @@ do { \
     push(a op b); \
 } while (false);
     while (true) {
-        switch (*compiling_chunk.ip++) {
+        switch (*chunk.ip++) {
             case OP_PRINT: {
                 int value = pop();
                 printf("%d\n", value);
                 break;
             }
             case OP_CONST: {
-                push(vm.cp[*compiling_chunk.ip++]);
+                push(vm.cp[*chunk.ip++]);
                 break;
             }
             case OP_ADD: BINARY_OP(+); break;
             case OP_SUB: BINARY_OP(-); break;
             case OP_MUL: BINARY_OP(*); break;
             case OP_DIV: BINARY_OP(/); break;
-            case OP_EXIT: exit(0);
+            case OP_EXIT: return;
             default:
                 break;
         }

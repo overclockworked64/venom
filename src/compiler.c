@@ -3,23 +3,23 @@
 #include "compiler.h"
 #include "vm.h"
 
-void init_chunk(BytecodeChunk *chunk) {
-    chunk->code = malloc(sizeof(chunk->code[0]) * 255);
-    chunk->count = 0;
-    chunk->ip = chunk->code;
+void init_chunk() {
+    chunk.code = malloc(sizeof(chunk.code[0]) * 255);
+    chunk.count = 0;
+    chunk.ip = chunk.code;
 }
 
-void free_chunk(BytecodeChunk *chunk) {
-    free(chunk->code);
+void free_chunk() {
+    free(chunk.code);
 }
 
 void emit_const(int constant) {
     vm.cp[vm.cpp++] = constant;
-    compiling_chunk.code[compiling_chunk.count++] = vm.cpp - 1;
+    chunk.code[chunk.count++] = vm.cpp - 1;
 }
 
 void emit_op(Opcode op) {
-    compiling_chunk.code[compiling_chunk.count++] = op;
+    chunk.code[chunk.count++] = op;
 }
 
 void compile_expression(const BinaryExpression *exp, ExpressionKind kind) {
@@ -46,7 +46,7 @@ void compile_expression(const BinaryExpression *exp, ExpressionKind kind) {
 }
 
 void compile(Statement stmt) {
-    init_chunk(&compiling_chunk);
+    init_chunk();
     switch (stmt.kind) {
         case STATEMENT_PRINT: {
             compile_expression(stmt.exp.data.binexp, stmt.exp.kind);

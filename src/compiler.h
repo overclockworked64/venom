@@ -2,6 +2,7 @@
 #define venom_compiler_h
 
 #include "parser.h"
+#include "vm.h"
 
 typedef enum {
     OP_PRINT,
@@ -13,17 +14,16 @@ typedef enum {
     OP_EXIT,
 } Opcode;
 
-void compile(Statement stmt);
-
 typedef struct {
     char *code;
     char *ip;
     int count;
 } BytecodeChunk;
 
-BytecodeChunk compiling_chunk;
+BytecodeChunk chunk;
 
-void init_chunk(BytecodeChunk *chunk);
-void free_chunk(BytecodeChunk *chunk);
+void init_chunk();
+void free_chunk();
+void compile(Statement stmt);
 
 #endif

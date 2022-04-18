@@ -4,10 +4,13 @@
 #include "vm.h"
 
 int main(int argc, char *argv[]) {
-    char *source = "print 5 * 4;";
+    char *source = "print 6 * 4;";
     init_tokenizer(source);
     init_vm();
-    compile(parse());
+    Statement stmt = parse();
+    compile(stmt);
     run();
     free_vm();
+    free_chunk();
+    free_ast(stmt.exp.data.binexp);
 }

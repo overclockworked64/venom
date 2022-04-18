@@ -22,13 +22,6 @@ typedef struct BinaryExpression {
     Expression rhs;    
 } BinaryExpression;
 
-typedef struct {
-    Token current;
-    Token previous;
-} Parser;
-
-Parser parser;
-
 typedef enum {
     STATEMENT_PRINT,
 } StatementKind;
@@ -39,5 +32,6 @@ typedef struct {
 } Statement;
 
 Statement parse();
+void free_ast(BinaryExpression *binexp);
 
 #endif
