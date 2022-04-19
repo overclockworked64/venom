@@ -111,7 +111,7 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
 }
 
 #ifdef venom_debug
-static void print_expression(BinaryExpression *e, ExpressionKind kind) {
+static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
     printf("(");
     
     if (e->lhs.kind != LITERAL) { 
