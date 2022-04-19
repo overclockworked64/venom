@@ -14,16 +14,13 @@ typedef enum {
     OP_EXIT,
 } Opcode;
 
-typedef struct {
+typedef struct BytecodeChunk {
     char *code;
     char *ip;
     int count;
 } BytecodeChunk;
 
-BytecodeChunk chunk;
-
-void init_chunk();
-void free_chunk();
-void compile(Statement stmt);
+void free_chunk(BytecodeChunk *chunk);
+void compile(BytecodeChunk *chunk, VM *vm, Statement stmt);
 
 #endif

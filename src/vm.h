@@ -3,6 +3,8 @@
 
 #define STACK_MAX 255
 
+#include "compiler.h"
+
 typedef struct {
     int stack[STACK_MAX];
     int tos;  /* top of stack */
@@ -10,10 +12,10 @@ typedef struct {
     int cpp;  /* constant pool pointer */
 } VM;
 
-VM vm;
+typedef struct BytecodeChunk BytecodeChunk;
 
-void init_vm();
-void free_vm();
-void run();
+void init_vm(VM *vm);
+void free_vm(VM *vm);
+void run(VM *vm, BytecodeChunk *chunk);
 
 #endif

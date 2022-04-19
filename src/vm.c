@@ -4,46 +4,46 @@
 #include "compiler.h"
 #include "vm.h"
 
-void init_vm() {
-    vm.cp = malloc(sizeof(int) * 1024);
-    vm.tos = 0;
-    vm.cpp = 0;
+void init_vm(VM *vm) {
+    vm->cp = malloc(sizeof(int) * 1024);
+    vm->tos = 0;
+    vm->cpp = 0;
 }
 
-void free_vm() {
-    free(vm.cp);
+void free_vm(VM *vm) {
+    free(vm->cp);
 }
 
-static void push(int value) {
-    vm.stack[vm.tos++] = value;
+static void push(VM *vm, int value) {
+    vm->stack[vm->tos++] = value;
 }
 
-static int pop() {
-    return vm.stack[--vm.tos];
+static int pop(VM *vm) {
+    return vm->stack[--vm->tos];
 }
 
-void run() {
-#define BINARY_OP(op) \
+void run(VM *vm, BytecodeChunk *chunk) {
+#define BINARY_OP(vm, op) \
 do { \
-    int b = pop(); \
-    int a = pop(); \
-    push(a op b); \
+    int b = pop(vm); \
+    int a = pop(vm); \
+    push(vm, a op b); \
 } while (false);
     while (true) {
-        switch (*chunk.ip++) {
+        switch (*chunk->ip++) {
             case OP_PRINT: {
-                int value = pop();
+                int value = pop(vm);
                 printf("%d\n", value);
                 break;
             }
             case OP_CONST: {
-                push(vm.cp[*chunk.ip++]);
+                push(vm, vm->cp[*chunk->ip++]);
                 break;
             }
-            case OP_ADD: BINARY_OP(+); break;
-            case OP_SUB: BINARY_OP(-); break;
-            case OP_MUL: BINARY_OP(*); break;
-            case OP_DIV: BINARY_OP(/); break;
+            case OP_ADD: BINARY_OP(vm, +); break;
+            case OP_SUB: BINARY_OP(vm, -); break;
+            case OP_MUL: BINARY_OP(vm, *); break;
+            case OP_DIV: BINARY_OP(vm, /); break;
             case OP_EXIT: return;
             default:
                 break;

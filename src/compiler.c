@@ -3,56 +3,56 @@
 #include "compiler.h"
 #include "vm.h"
 
-void init_chunk() {
-    chunk.code = malloc(sizeof(chunk.code[0]) * 255);
-    chunk.count = 0;
-    chunk.ip = chunk.code;
+void init_chunk(BytecodeChunk *chunk) {
+    chunk->code = malloc(sizeof(chunk->code[0]) * 255);
+    chunk->count = 0;
+    chunk->ip = chunk->code;
 }
 
-void free_chunk() {
-    free(chunk.code);
+void free_chunk(BytecodeChunk *chunk) {
+    free(chunk->code);
 }
 
-void emit_const(int constant) {
-    vm.cp[vm.cpp++] = constant;
-    chunk.code[chunk.count++] = vm.cpp - 1;
+void emit_const(BytecodeChunk *chunk, VM *vm, int constant) {
+    vm->cp[vm->cpp++] = constant;
+    chunk->code[chunk->count++] = vm->cpp - 1;
 }
 
-void emit_op(Opcode op) {
-    chunk.code[chunk.count++] = op;
+void emit_op(BytecodeChunk *chunk, Opcode op) {
+    chunk->code[chunk->count++] = op;
 }
 
-void compile_expression(const BinaryExpression *exp, ExpressionKind kind) {
-    if (exp->lhs.kind != LITERAL) compile_expression(exp->lhs.data.binexp, exp->lhs.kind);
-    if (exp->rhs.kind != LITERAL) compile_expression(exp->rhs.data.binexp, exp->rhs.kind);
+void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *exp, ExpressionKind kind) {
+    if (exp->lhs.kind != LITERAL) compile_expression(chunk, vm, exp->lhs.data.binexp, exp->lhs.kind);
+    if (exp->rhs.kind != LITERAL) compile_expression(chunk, vm, exp->rhs.data.binexp, exp->rhs.kind);
 
     if (exp->lhs.kind == LITERAL) {
-        emit_op(OP_CONST);
-        emit_const(exp->lhs.data.intval);
+        emit_op(chunk, OP_CONST);
+        emit_const(chunk, vm, exp->lhs.data.intval);
     }
     
     if (exp->rhs.kind == LITERAL) {
-        emit_op(OP_CONST);
-        emit_const(exp->rhs.data.intval);
+        emit_op(chunk, OP_CONST);
+        emit_const(chunk, vm, exp->rhs.data.intval);
     }
 
     switch (kind) {
-        case ADD: emit_op(OP_ADD); break;
-        case SUB: emit_op(OP_SUB); break;
-        case MUL: emit_op(OP_MUL); break;
-        case DIV: emit_op(OP_DIV); break;
+        case ADD: emit_op(chunk, OP_ADD); break;
+        case SUB: emit_op(chunk, OP_SUB); break;
+        case MUL: emit_op(chunk, OP_MUL); break;
+        case DIV: emit_op(chunk, OP_DIV); break;
         default: break;
     }
 }
 
-void compile(Statement stmt) {
-    init_chunk();
+void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
+    init_chunk(chunk);
     switch (stmt.kind) {
         case STATEMENT_PRINT: {
-            compile_expression(stmt.exp.data.binexp, stmt.exp.kind);
-            emit_op(OP_PRINT);
+            compile_expression(chunk, vm, stmt.exp.data.binexp, stmt.exp.kind);
+            emit_op(chunk, OP_PRINT);
         }
         default: break;
     }
-    emit_op(OP_EXIT);
+    emit_op(chunk, OP_EXIT);
 }

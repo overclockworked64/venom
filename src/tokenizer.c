@@ -2,32 +2,26 @@
 #include <string.h>
 #include "tokenizer.h"
 
-typedef struct {
-    char *current;
-} Tokenizer;
-
-static Tokenizer tokenizer;
-
-void init_tokenizer(char *source) {
-    tokenizer.current = source;
+void init_tokenizer(Tokenizer *tokenizer, char *source) {
+    tokenizer->current = source;
 }
 
-static char peek() {
-    return *tokenizer.current;
+static char peek(Tokenizer *tokenizer) {
+    return *tokenizer->current;
 }
 
-static char advance() {
-    return *tokenizer.current++;
+static char advance(Tokenizer *tokenizer) {
+    return *tokenizer->current++;
 }
 
-static void skip_whitespace() {
+static void skip_whitespace(Tokenizer *tokenizer) {
     while (true) {
-        switch (peek()) {
+        switch (peek(tokenizer)) {
             case ' ':
             case '\n':
             case '\r':
             case '\t':
-                advance();
+                advance(tokenizer);
                 break;
             default:
                 return;
@@ -43,60 +37,60 @@ static bool is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static bool lookahead(int length, char *rest) {
-    if (strncmp(tokenizer.current, rest, length) == 0) {
-        for (int i = 0; i < length; ++i) advance();
+static bool lookahead(Tokenizer *tokenizer, int length, char *rest) {
+    if (strncmp(tokenizer->current, rest, length) == 0) {
+        for (int i = 0; i < length; ++i) advance(tokenizer);
         return true;
     }
     return false;
 }
 
-static Token make_token(TokenType type, int length) {
+static Token make_token(Tokenizer *tokenizer, TokenType type, int length) {
     Token token;
     token.type = type;
-    token.start = tokenizer.current - length;
+    token.start = tokenizer->current - length;
     token.length = length;
     return token;
 }
 
-static Token number() {
+static Token number(Tokenizer *tokenizer) {
     int length = 0;
-    while (is_digit(peek())) {
-        advance();
+    while (is_digit(peek(tokenizer))) {
+        advance(tokenizer);
         ++length;
     }
-    return make_token(TOKEN_NUMBER, length + 1);
+    return make_token(tokenizer, TOKEN_NUMBER, length + 1);
 }
 
-static Token identifier() {
+static Token identifier(Tokenizer *tokenizer) {
     int length = 0;
-    while (is_digit(peek()) || is_alpha(peek())) {
-        advance();
+    while (is_digit(peek(tokenizer)) || is_alpha(peek(tokenizer))) {
+        advance(tokenizer);
         ++length;
     }
-    return make_token(TOKEN_NUMBER, length + 1);
+    return make_token(tokenizer, TOKEN_NUMBER, length + 1);
 }
 
-Token get_token() {
-    skip_whitespace();
+Token get_token(Tokenizer *tokenizer) {
+    skip_whitespace(tokenizer);
 
-    char c = advance();
-    if (is_digit(c)) return number();
-    if (c == '\0') return make_token(TOKEN_EOF, 0);
+    char c = advance(tokenizer);
+    if (is_digit(c)) return number(tokenizer);
+    if (c == '\0') return make_token(tokenizer, TOKEN_EOF, 0);
     switch (c) {
-        case '+': return make_token(TOKEN_PLUS, 1);
-        case '-': return make_token(TOKEN_MINUS, 1);
-        case '*': return make_token(TOKEN_STAR, 1);
-        case '/': return make_token(TOKEN_SLASH, 1);
-        case '(': return make_token(TOKEN_LEFT_PAREN, 1);
-        case ')': return make_token(TOKEN_RIGHT_PAREN, 1);
-        case ';': return make_token(TOKEN_SEMICOLON, 1);
+        case '+': return make_token(tokenizer, TOKEN_PLUS, 1);
+        case '-': return make_token(tokenizer, TOKEN_MINUS, 1);
+        case '*': return make_token(tokenizer, TOKEN_STAR, 1);
+        case '/': return make_token(tokenizer, TOKEN_SLASH, 1);
+        case '(': return make_token(tokenizer, TOKEN_LEFT_PAREN, 1);
+        case ')': return make_token(tokenizer, TOKEN_RIGHT_PAREN, 1);
+        case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
         case 'p':
-            if (lookahead(4, "rint")) {
-                return make_token(TOKEN_PRINT, 5);
+            if (lookahead(tokenizer, 4, "rint")) {
+                return make_token(tokenizer, TOKEN_PRINT, 5);
             }
-            return identifier();
+            return identifier(tokenizer);
         default:
-            return identifier();
+            return identifier(tokenizer);
     }
 }

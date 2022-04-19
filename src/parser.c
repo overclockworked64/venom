@@ -7,46 +7,39 @@
 
 #define venom_debug
 
-typedef struct {
-    Token current;
-    Token previous;
-} Parser;
-
-static Parser parser;
-
 void free_ast(BinaryExpression *binexp) {
     if (binexp->lhs.kind != LITERAL) free_ast(binexp->lhs.data.binexp);
     if (binexp->rhs.kind != LITERAL) free_ast(binexp->rhs.data.binexp);
     free(binexp);
 }
 
-static void advance() {
-    parser.previous = parser.current;
-    parser.current = get_token();
+static void advance(Parser *parser, Tokenizer *tokenizer) {
+    parser->previous = parser->current;
+    parser->current = get_token(tokenizer);
 }
 
-static bool check(TokenType type) {
-    return parser.current.type == type;
+static bool check(Parser *parser, TokenType type) {
+    return parser->current.type == type;
 }
 
-static bool match(int size, TokenType types[]) {
+static bool match(Parser *parser, Tokenizer *tokenizer, int size, TokenType types[]) {
     for (int i = 0; i < size; ++i) {
-        if (check(types[i])) {
-            advance();
+        if (check(parser, types[i])) {
+            advance(parser, tokenizer);
             return true;
         }
     }
     return false;
 }
 
-static void consume(TokenType type) {
-    if (check(type)) advance();
+static void consume(Parser *parser, Tokenizer *tokenizer, TokenType type) {
+    if (check(parser, type)) advance(parser, tokenizer);
 }
 
-static Expression number() {
+static Expression number(Parser *parser) {
     Expression expr;
     expr.kind = LITERAL,
-    expr.data.intval = strtod(parser.previous.start, NULL);
+    expr.data.intval = strtod(parser->previous.start, NULL);
     return expr;
 }
 
@@ -63,12 +56,12 @@ static ExpressionKind operator(Token token) {
      }
 }
 
-static Expression factor() {
-    Expression expr = primary();
-    while (match(2, (TokenType[]) { TOKEN_STAR, TOKEN_SLASH } )) {
-        ExpressionKind kind = operator(parser.previous);
-        Expression right = primary();
-        Expression result = { .kind=kind, .data.binexp=malloc(sizeof(BinaryExpression)) };
+static Expression factor(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = primary(parser, tokenizer);
+    while (match(parser, tokenizer, 2, (TokenType[]) { TOKEN_STAR, TOKEN_SLASH } )) {
+        ExpressionKind kind = operator(parser->previous);
+        Expression right = primary(parser, tokenizer);
+        Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -76,12 +69,12 @@ static Expression factor() {
     return expr;
 }
 
-static Expression term() {
-    Expression expr = factor();
-    while (match(2, (TokenType[]) { TOKEN_PLUS, TOKEN_MINUS } )) {
-        ExpressionKind kind = operator(parser.previous);
-        Expression right = factor();
-        Expression result = { .kind=kind, .data.binexp=malloc(sizeof(BinaryExpression)) };
+static Expression term(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = factor(parser, tokenizer);
+    while (match(parser, tokenizer, 2, (TokenType[]) { TOKEN_PLUS, TOKEN_MINUS } )) {
+        ExpressionKind kind = operator(parser->previous);
+        Expression right = factor(parser, tokenizer);
+        Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -89,19 +82,19 @@ static Expression term() {
     return expr;
 }
 
-static Expression expression() {
-    return term();
+static Expression expression(Parser *parser, Tokenizer *tokenizer) {
+    return term(parser, tokenizer);
 }
 
-static Expression grouping() {
-    Expression exp = expression();
-    consume(TOKEN_RIGHT_PAREN);
+static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
+    Expression exp = expression(parser, tokenizer);
+    consume(parser, tokenizer, TOKEN_RIGHT_PAREN);
     return exp;
 }
 
-static Expression primary() {
-    if (match(1, (TokenType[]) { TOKEN_NUMBER } )) return number();
-    else if (match(1, (TokenType[]) { TOKEN_LEFT_PAREN } )) return grouping();
+static Expression primary(Parser *parser, Tokenizer *tokenizer) {
+    if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_NUMBER } )) return number(parser);
+    else if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_LEFT_PAREN } )) return grouping(parser, tokenizer);
     else exit(1);
 }
 
@@ -143,19 +136,19 @@ static void print_expression(BinaryExpression *e, ExpressionKind kind) {
 }
 #endif
 
-static Statement print_statement() {
-    Expression exp = expression();
+static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
+    Expression exp = expression(parser, tokenizer);
     print_expression(exp.data.binexp, exp.kind);
     Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp };
-    consume(TOKEN_SEMICOLON);
+    consume(parser, tokenizer, TOKEN_SEMICOLON);
     return stmt;
 }
 
-static Statement statement() {
-    if (match(1, (TokenType[]) { TOKEN_PRINT })) return print_statement();
+static Statement statement(Parser *parser, Tokenizer *tokenizer) {
+    if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_PRINT })) return print_statement(parser, tokenizer);
 }
 
-Statement parse() {
-    advance();
-    return statement();
+Statement parse(Parser *parser, Tokenizer *tokenizer) {
+    advance(parser, tokenizer);
+    return statement(parser, tokenizer);
 }

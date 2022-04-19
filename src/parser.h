@@ -31,7 +31,12 @@ typedef struct {
     Expression exp;
 } Statement;
 
-Statement parse();
+typedef struct {
+    Token current;
+    Token previous;
+} Parser;
+
+Statement parse(Parser *parser, Tokenizer *tokenizer);
 void free_ast(BinaryExpression *binexp);
 
 #endif

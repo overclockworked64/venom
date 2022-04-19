@@ -19,7 +19,11 @@ typedef struct {
     int length;
 } Token;
 
-void init_tokenizer(char *source);
-Token get_token();
+typedef struct {
+    char *current;
+} Tokenizer;
+
+void init_tokenizer(Tokenizer *tokenizer, char *source);
+Token get_token(Tokenizer *tokenizer);
 
 #endif
