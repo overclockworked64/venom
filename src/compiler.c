@@ -23,8 +23,13 @@ void emit_op(BytecodeChunk *chunk, Opcode op) {
 }
 
 void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *exp, ExpressionKind kind) {
-    if (exp->lhs.kind != LITERAL) compile_expression(chunk, vm, exp->lhs.data.binexp, exp->lhs.kind);
-    if (exp->rhs.kind != LITERAL) compile_expression(chunk, vm, exp->rhs.data.binexp, exp->rhs.kind);
+    if (exp->lhs.kind != LITERAL) {
+        compile_expression(chunk, vm, exp->lhs.data.binexp, exp->lhs.kind);
+    }
+    
+    if (exp->rhs.kind != LITERAL) {
+        compile_expression(chunk, vm, exp->rhs.data.binexp, exp->rhs.kind);
+    }
 
     if (exp->lhs.kind == LITERAL) {
         emit_op(chunk, OP_CONST);

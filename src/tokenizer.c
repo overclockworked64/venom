@@ -85,11 +85,12 @@ Token get_token(Tokenizer *tokenizer) {
         case '(': return make_token(tokenizer, TOKEN_LEFT_PAREN, 1);
         case ')': return make_token(tokenizer, TOKEN_RIGHT_PAREN, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
-        case 'p':
+        case 'p': {
             if (lookahead(tokenizer, 4, "rint")) {
                 return make_token(tokenizer, TOKEN_PRINT, 5);
             }
             return identifier(tokenizer);
+        }
         default:
             return identifier(tokenizer);
     }

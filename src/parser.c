@@ -64,7 +64,7 @@ static ExpressionKind operator(Token token) {
         case TOKEN_STAR:  return MUL;
         case TOKEN_SLASH: return DIV;
         default:
-            break;
+            assert(0);
      }
 }
 
@@ -105,9 +105,13 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
 }
 
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
-    if (match(parser, tokenizer, 1, TOKEN_NUMBER)) return number(parser);
-    else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) return grouping(parser, tokenizer);
-    else exit(1);
+    if (match(parser, tokenizer, 1, TOKEN_NUMBER)) {
+        return number(parser);
+    }
+    else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
+        return grouping(parser, tokenizer);
+    }
+    else assert(0);
 }
 
 #ifdef venom_debug
