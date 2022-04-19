@@ -9,8 +9,14 @@
 #define venom_debug
 
 void free_ast(BinaryExpression *binexp) {
-    if (binexp->lhs.kind != LITERAL) free_ast(binexp->lhs.data.binexp);
-    if (binexp->rhs.kind != LITERAL) free_ast(binexp->rhs.data.binexp);
+    if (binexp->lhs.kind != LITERAL) {
+        free_ast(binexp->lhs.data.binexp);
+    }
+
+    if (binexp->rhs.kind != LITERAL) {
+        free_ast(binexp->rhs.data.binexp);
+    }
+
     free(binexp);
 }
 
@@ -108,30 +114,31 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
 static void print_expression(BinaryExpression *e, ExpressionKind kind) {
     printf("(");
     
-    if (e->lhs.kind != LITERAL) print_expression(e->lhs.data.binexp, e->lhs.kind);
-    if (e->rhs.kind != LITERAL) print_expression(e->rhs.data.binexp, e->rhs.kind);
+    if (e->lhs.kind != LITERAL) { 
+        print_expression(e->lhs.data.binexp, e->lhs.kind);
+    }
 
-    if (e->lhs.kind == LITERAL) printf("%d ", e->lhs.data.intval);
+    if (e->rhs.kind != LITERAL) {
+        print_expression(e->rhs.data.binexp, e->rhs.kind);
+    }
+
+    if (e->lhs.kind == LITERAL) {
+        printf("%d ", e->lhs.data.intval);
+    }
 
     switch (kind) {
-        case ADD:
-            printf("+ ");
-            break;
-        case SUB:
-            printf("- ");
-            break;
-        case MUL:
-            printf("* ");
-            break;
-        case DIV:
-            printf("/ ");
-            break;
+        case ADD: printf("+ "); break;
+        case SUB: printf("- "); break;
+        case MUL: printf("* "); break;
+        case DIV: printf("/ "); break;
         default:
             break;
     }
     
-    if (e->rhs.kind == LITERAL) printf("%d", e->rhs.data.intval);
-   
+    if (e->rhs.kind == LITERAL) {
+        printf("%d", e->rhs.data.intval);
+    }
+
     printf(") ");
 
     if (!e) printf("\n");
@@ -147,7 +154,9 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
 }
 
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
-    if (match(parser, tokenizer, 1, TOKEN_PRINT)) return print_statement(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
+        return print_statement(parser, tokenizer);
+    }
 }
 
 Statement parse(Parser *parser, Tokenizer *tokenizer) {
