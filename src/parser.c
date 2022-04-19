@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,13 +23,18 @@ static bool check(Parser *parser, TokenType type) {
     return parser->current.type == type;
 }
 
-static bool match(Parser *parser, Tokenizer *tokenizer, int size, TokenType types[]) {
+static bool match(Parser *parser, Tokenizer *tokenizer, int size, ...) {
+    va_list ap;
+    va_start(ap, size);
     for (int i = 0; i < size; ++i) {
-        if (check(parser, types[i])) {
+        TokenType type = va_arg(ap, TokenType);
+        if (check(parser, type)) {
             advance(parser, tokenizer);
+            va_end(ap);
             return true;
         }
     }
+    va_end(ap);
     return false;
 }
 
@@ -58,7 +64,7 @@ static ExpressionKind operator(Token token) {
 
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = primary(parser, tokenizer);
-    while (match(parser, tokenizer, 2, (TokenType[]) { TOKEN_STAR, TOKEN_SLASH } )) {
+    while (match(parser, tokenizer, 2, TOKEN_STAR, TOKEN_SLASH)) {
         ExpressionKind kind = operator(parser->previous);
         Expression right = primary(parser, tokenizer);
         Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
@@ -71,7 +77,7 @@ static Expression factor(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression term(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = factor(parser, tokenizer);
-    while (match(parser, tokenizer, 2, (TokenType[]) { TOKEN_PLUS, TOKEN_MINUS } )) {
+    while (match(parser, tokenizer, 2, TOKEN_PLUS, TOKEN_MINUS)) {
         ExpressionKind kind = operator(parser->previous);
         Expression right = factor(parser, tokenizer);
         Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
@@ -93,8 +99,8 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
 }
 
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
-    if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_NUMBER } )) return number(parser);
-    else if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_LEFT_PAREN } )) return grouping(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_NUMBER)) return number(parser);
+    else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) return grouping(parser, tokenizer);
     else exit(1);
 }
 
@@ -105,9 +111,7 @@ static void print_expression(BinaryExpression *e, ExpressionKind kind) {
     if (e->lhs.kind != LITERAL) print_expression(e->lhs.data.binexp, e->lhs.kind);
     if (e->rhs.kind != LITERAL) print_expression(e->rhs.data.binexp, e->rhs.kind);
 
-    if (e->lhs.kind == LITERAL) {
-        printf("%d ", e->lhs.data.intval);
-    }
+    if (e->lhs.kind == LITERAL) printf("%d ", e->lhs.data.intval);
 
     switch (kind) {
         case ADD:
@@ -126,9 +130,7 @@ static void print_expression(BinaryExpression *e, ExpressionKind kind) {
             break;
     }
     
-    if (e->rhs.kind == LITERAL) {
-        printf("%d", e->rhs.data.intval);
-    }   
+    if (e->rhs.kind == LITERAL) printf("%d", e->rhs.data.intval);
    
     printf(") ");
 
@@ -145,7 +147,7 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
 }
 
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
-    if (match(parser, tokenizer, 1, (TokenType[]) { TOKEN_PRINT })) return print_statement(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_PRINT)) return print_statement(parser, tokenizer);
 }
 
 Statement parse(Parser *parser, Tokenizer *tokenizer) {
