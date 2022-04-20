@@ -151,7 +151,9 @@ static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
 
 static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     Expression exp = expression(parser, tokenizer);
+#ifdef venom_debug
     print_expression(exp.data.binexp, exp.kind);
+#endif
     Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp };
     consume(parser, tokenizer, TOKEN_SEMICOLON);
     return stmt;
