@@ -18,19 +18,22 @@ void repl() {
 
         printf("> ");
 
-        if (getline(&line, &len, stdin) == EOF) exit(0); 
-        
+        if (getline(&line, &len, stdin) == EOF) {
+            free(line);
+            break; 
+        }
+
         init_tokenizer(&tokenizer, line);
         Statement stmt = parse(&parser, &tokenizer);
         compile(&chunk, &vm, stmt);
         run(&vm, &chunk);
 
+        free_chunk(&chunk);
         free_ast(stmt.exp.data.binexp);
         free(line);
     }
 
     free_vm(&vm);
-    free_chunk(&chunk);
 }
 
 int main(int argc, char *argv[]) {
