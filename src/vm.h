@@ -6,10 +6,10 @@
 #include "compiler.h"
 
 typedef struct {
-    int stack[STACK_MAX];
-    int tos;  /* top of stack */
-    int *cp;  /* constant pool */
-    int cpp;  /* constant pool pointer */
+    double stack[STACK_MAX];
+    size_t tos;  /* top of stack */
+    double *cp;  /* constant pool */
+    size_t cpp;  /* constant pool pointer */
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;

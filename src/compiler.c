@@ -13,7 +13,7 @@ void free_chunk(BytecodeChunk *chunk) {
     free(chunk->code);
 }
 
-void emit_const(BytecodeChunk *chunk, VM *vm, int constant) {
+void emit_const(BytecodeChunk *chunk, VM *vm, double constant) {
     vm->cp[vm->cpp++] = constant;
     chunk->code[chunk->count++] = vm->cpp - 1;
 }
@@ -33,12 +33,12 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *ex
 
     if (exp->lhs.kind == LITERAL) {
         emit_op(chunk, OP_CONST);
-        emit_const(chunk, vm, exp->lhs.data.intval);
+        emit_const(chunk, vm, exp->lhs.data.val);
     }
     
     if (exp->rhs.kind == LITERAL) {
         emit_op(chunk, OP_CONST);
-        emit_const(chunk, vm, exp->rhs.data.intval);
+        emit_const(chunk, vm, exp->rhs.data.val);
     }
 
     switch (kind) {

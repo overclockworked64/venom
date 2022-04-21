@@ -4,7 +4,7 @@
 #include "vm.h"
 
 void init_vm(VM *vm) {
-    vm->cp = malloc(sizeof(int) * 1024);
+    vm->cp = malloc(sizeof(double) * 1024);
     vm->tos = 0;
     vm->cpp = 0;
 }
@@ -13,26 +13,26 @@ void free_vm(VM *vm) {
     free(vm->cp);
 }
 
-static void push(VM *vm, int value) {
+static void push(VM *vm, double value) {
     vm->stack[vm->tos++] = value;
 }
 
-static int pop(VM *vm) {
+static double pop(VM *vm) {
     return vm->stack[--vm->tos];
 }
 
 void run(VM *vm, BytecodeChunk *chunk) {
 #define BINARY_OP(vm, op) \
 do { \
-    int b = pop(vm); \
-    int a = pop(vm); \
+    double b = pop(vm); \
+    double a = pop(vm); \
     push(vm, a op b); \
 } while (0)
     for (int i = 0; i < chunk->count; ++i) {
         switch (*chunk->ip++) {
             case OP_PRINT: {
-                int value = pop(vm);
-                printf("%d\n", value);
+                double value = pop(vm);
+                printf("%f\n", value);
                 break;
             }
             case OP_CONST: {

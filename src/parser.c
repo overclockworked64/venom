@@ -58,7 +58,7 @@ static void consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char *
 static Expression number(Parser *parser) {
     Expression expr;
     expr.kind = LITERAL,
-    expr.data.intval = strtod(parser->previous.start, NULL);
+    expr.data.val = strtod(parser->previous.start, NULL);
     return expr;
 }
 
@@ -128,7 +128,7 @@ static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
     if (e->lhs.kind != LITERAL) { 
         print_expression(e->lhs.data.binexp, e->lhs.kind);
     } else {
-        printf("%d ", e->lhs.data.intval);
+        printf("%f ", e->lhs.data.val);
     }
 
     switch (kind) {
@@ -143,7 +143,7 @@ static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
     if (e->rhs.kind != LITERAL) {
         print_expression(e->rhs.data.binexp, e->rhs.kind);
     } else {
-        printf("%d", e->rhs.data.intval);
+        printf("%f", e->rhs.data.val);
     }
 
     printf(")");

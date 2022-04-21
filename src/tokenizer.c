@@ -6,8 +6,8 @@ void init_tokenizer(Tokenizer *tokenizer, char *source) {
     tokenizer->current = source;
 }
 
-static char peek(Tokenizer *tokenizer) {
-    return *tokenizer->current;
+static char peek(Tokenizer *tokenizer, int distance) {
+    return tokenizer->current[distance];
 }
 
 static char advance(Tokenizer *tokenizer) {
@@ -16,7 +16,7 @@ static char advance(Tokenizer *tokenizer) {
 
 static void skip_whitespace(Tokenizer *tokenizer) {
     while (true) {
-        switch (peek(tokenizer)) {
+        switch (peek(tokenizer, 0)) {
             case ' ':
             case '\n':
             case '\r':
@@ -55,16 +55,25 @@ static Token make_token(Tokenizer *tokenizer, TokenType type, int length) {
 
 static Token number(Tokenizer *tokenizer) {
     int length = 0;
-    while (is_digit(peek(tokenizer))) {
+    while (is_digit(peek(tokenizer, 0))) {
         advance(tokenizer);
         ++length;
+    }
+    if (peek(tokenizer, 0) == '.' && is_digit(peek(tokenizer, 1))) {
+        advance(tokenizer);
+        ++length;
+ 
+        while (is_digit(peek(tokenizer, 0))) {
+            advance(tokenizer);
+            ++length;
+        }
     }
     return make_token(tokenizer, TOKEN_NUMBER, length + 1);
 }
 
 static Token identifier(Tokenizer *tokenizer) {
     int length = 0;
-    while (is_digit(peek(tokenizer)) || is_alpha(peek(tokenizer))) {
+    while (is_digit(peek(tokenizer, 0)) || is_alpha(peek(tokenizer, 0))) {
         advance(tokenizer);
         ++length;
     }

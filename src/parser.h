@@ -15,7 +15,7 @@ typedef struct Expression {
     ExpressionKind kind;
     union {
         BinaryExpression *binexp;
-        int intval;
+        double val;
     } data;
 } Expression;
 
