@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -23,21 +24,31 @@ void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
     chunk->code[chunk->count++] = byte;
 }
 
+void emit_bytes(BytecodeChunk *chunk, int n, ...) {
+    va_list ap;
+    va_start(ap, n);
+
+    for (int i = 0; i < n; ++i) {
+        uint8_t byte = va_arg(ap, int);
+        emit_byte(chunk, (uint8_t)byte);
+    }
+
+    va_end(ap);
+}
+
 void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *exp, ExpressionKind kind) {
     if (exp->lhs.kind != LITERAL) {
         compile_expression(chunk, vm, exp->lhs.data.binexp, exp->lhs.kind);
     } else {
         int index = add_constant(vm, exp->lhs.data.val);
-        emit_byte(chunk, OP_CONST);
-        emit_byte(chunk, index);
+        emit_bytes(chunk, 2, OP_CONST, index);
     }
     
     if (exp->rhs.kind != LITERAL) {
         compile_expression(chunk, vm, exp->rhs.data.binexp, exp->rhs.kind);
     } else {
         int index = add_constant(vm, exp->rhs.data.val);
-        emit_byte(chunk, OP_CONST);
-        emit_byte(chunk, index);
+        emit_bytes(chunk, 2, OP_CONST, index);
     }
 
     switch (kind) {
