@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "compiler.h"
 #include "vm.h"
 
@@ -13,35 +14,37 @@ void free_chunk(BytecodeChunk *chunk) {
     free(chunk->code);
 }
 
-void emit_const(BytecodeChunk *chunk, VM *vm, double constant) {
+int add_constant(VM *vm, double constant) {
     vm->cp[vm->cpp++] = constant;
-    chunk->code[chunk->count++] = vm->cpp - 1;
+    return vm->cpp - 1;
 }
 
-void emit_op(BytecodeChunk *chunk, Opcode op) {
-    chunk->code[chunk->count++] = op;
+void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
+    chunk->code[chunk->count++] = byte;
 }
 
 void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *exp, ExpressionKind kind) {
     if (exp->lhs.kind != LITERAL) {
         compile_expression(chunk, vm, exp->lhs.data.binexp, exp->lhs.kind);
     } else {
-        emit_op(chunk, OP_CONST);
-        emit_const(chunk, vm, exp->lhs.data.val);
+        int index = add_constant(vm, exp->lhs.data.val);
+        emit_byte(chunk, OP_CONST);
+        emit_byte(chunk, index);
     }
     
     if (exp->rhs.kind != LITERAL) {
         compile_expression(chunk, vm, exp->rhs.data.binexp, exp->rhs.kind);
     } else {
-        emit_op(chunk, OP_CONST);
-        emit_const(chunk, vm, exp->rhs.data.val);
+        int index = add_constant(vm, exp->rhs.data.val);
+        emit_byte(chunk, OP_CONST);
+        emit_byte(chunk, index);
     }
 
     switch (kind) {
-        case ADD: emit_op(chunk, OP_ADD); break;
-        case SUB: emit_op(chunk, OP_SUB); break;
-        case MUL: emit_op(chunk, OP_MUL); break;
-        case DIV: emit_op(chunk, OP_DIV); break;
+        case ADD: emit_byte(chunk, OP_ADD); break;
+        case SUB: emit_byte(chunk, OP_SUB); break;
+        case MUL: emit_byte(chunk, OP_MUL); break;
+        case DIV: emit_byte(chunk, OP_DIV); break;
         default: break;
     }
 }
@@ -50,7 +53,7 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
     switch (stmt.kind) {
         case STATEMENT_PRINT: {
             compile_expression(chunk, vm, stmt.exp.data.binexp, stmt.exp.kind);
-            emit_op(chunk, OP_PRINT);
+            emit_byte(chunk, OP_PRINT);
         }
         default: break;
     }
