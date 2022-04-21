@@ -51,7 +51,6 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, const BinaryExpression *ex
 }
 
 void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
-    init_chunk(chunk);
     switch (stmt.kind) {
         case STATEMENT_PRINT: {
             compile_expression(chunk, vm, stmt.exp.data.binexp, stmt.exp.kind);
@@ -59,5 +58,4 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
         }
         default: break;
     }
-    emit_op(chunk, OP_EXIT);
 }

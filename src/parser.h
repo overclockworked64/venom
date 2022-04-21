@@ -1,6 +1,7 @@
 #ifndef venom_parser_h
 #define venom_parser_h
 
+#include "dynarray.h"
 #include "tokenizer.h"
 
 typedef enum {
@@ -26,7 +27,7 @@ typedef enum {
     STATEMENT_PRINT,
 } StatementKind;
 
-typedef struct {
+typedef struct Statement {
     StatementKind kind;
     Expression exp;
 } Statement;
@@ -36,7 +37,9 @@ typedef struct {
     Token previous;
 } Parser;
 
-Statement parse(Parser *parser, Tokenizer *tokenizer);
+typedef struct DynArray DynArray;
+
+void parse(Parser *parser, Tokenizer *tokenizer, DynArray *stmts);
 void free_ast(BinaryExpression *binexp);
 
 #endif

@@ -29,7 +29,7 @@ do { \
     int a = pop(vm); \
     push(vm, a op b); \
 } while (false);
-    while (true) {
+    for (int i = 0; i < chunk->count; ++i) {
         switch (*chunk->ip++) {
             case OP_PRINT: {
                 int value = pop(vm);
@@ -38,6 +38,7 @@ do { \
             }
             case OP_CONST: {
                 push(vm, vm->cp[*chunk->ip++]);
+                ++i;
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +); break;

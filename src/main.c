@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "compiler.h"
+#include "dynarray.h"
 #include "tokenizer.h"
 #include "parser.h"
 #include "vm.h"
 
 void repl() {
-    Tokenizer tokenizer;
-    Parser parser;
-    BytecodeChunk chunk;
     VM vm;
 
     init_vm(&vm);
@@ -23,13 +21,24 @@ void repl() {
             break; 
         }
 
+        Tokenizer tokenizer;
         init_tokenizer(&tokenizer, line);
-        Statement stmt = parse(&parser, &tokenizer);
-        compile(&chunk, &vm, stmt);
+
+        DynArray stmts;
+        dynarray_init(&stmts);
+        Parser parser;
+        parse(&parser, &tokenizer, &stmts);
+        
+        BytecodeChunk chunk;
+        init_chunk(&chunk);
+        for (int i = 0; i < stmts.count; i++) {
+            compile(&chunk, &vm, stmts.data[i]);
+            free_ast(stmts.data[i].exp.data.binexp);
+        }
         run(&vm, &chunk);
 
+        dynarray_free(&stmts);
         free_chunk(&chunk);
-        free_ast(stmt.exp.data.binexp);
         free(line);
     }
 

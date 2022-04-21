@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "dynarray.h"
 #include "parser.h"
 #include "tokenizer.h"
 
@@ -165,7 +166,13 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     }
 }
 
-Statement parse(Parser *parser, Tokenizer *tokenizer) {
-    advance(parser, tokenizer);
+Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
     return statement(parser, tokenizer);
+}
+
+void parse(Parser *parser, Tokenizer *tokenizer, DynArray *stmts) {
+    advance(parser, tokenizer);
+    while (parser->current.type != TOKEN_EOF) {
+        dynarray_insert(stmts, parse_statement(parser, tokenizer));
+    }
 }

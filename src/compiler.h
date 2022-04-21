@@ -20,7 +20,9 @@ typedef struct BytecodeChunk {
     int count;
 } BytecodeChunk;
 
+void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
 void compile(BytecodeChunk *chunk, VM *vm, Statement stmt);
+void emit_op(BytecodeChunk *chunk, Opcode op);
 
 #endif
