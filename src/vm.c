@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "compiler.h"
@@ -28,7 +27,7 @@ do { \
     int b = pop(vm); \
     int a = pop(vm); \
     push(vm, a op b); \
-} while (false)
+} while (0)
     for (int i = 0; i < chunk->count; ++i) {
         switch (*chunk->ip++) {
             case OP_PRINT: {
