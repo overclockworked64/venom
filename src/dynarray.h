@@ -14,11 +14,11 @@ do { \
         (array)->data = realloc((array)->data, sizeof((array)->data[0]) * (array)->capacity); \
     } \
     (array)->data[(array)->count++] = (stmt); \
-} while(0)
+} while (0)
 
 #define dynarray_free(array) \
 do { \
     free((array)->data); \
-} while(0)
+} while (0)
 
 #endif
