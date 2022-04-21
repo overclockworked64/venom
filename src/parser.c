@@ -21,6 +21,11 @@ void free_ast(BinaryExpression *binexp) {
     free(binexp);
 }
 
+static void parse_error(Parser *parser, char *message) {
+    parser->had_error = true;
+    fprintf(stderr, "parse error: %s\n", message);
+}
+
 static void advance(Parser *parser, Tokenizer *tokenizer) {
     parser->previous = parser->current;
     parser->current = get_token(tokenizer);
@@ -45,8 +50,9 @@ static bool match(Parser *parser, Tokenizer *tokenizer, int size, ...) {
     return false;
 }
 
-static void consume(Parser *parser, Tokenizer *tokenizer, TokenType type) {
+static void consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char *message) {
     if (check(parser, type)) advance(parser, tokenizer);
+    else parse_error(parser, message);
 }
 
 static Expression number(Parser *parser) {
@@ -101,7 +107,7 @@ static Expression expression(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
     Expression exp = expression(parser, tokenizer);
-    consume(parser, tokenizer, TOKEN_RIGHT_PAREN);
+    consume(parser, tokenizer, TOKEN_RIGHT_PAREN, "Unmatched closing parentheses.");
     return exp;
 }
 
@@ -121,13 +127,7 @@ static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
     
     if (e->lhs.kind != LITERAL) { 
         print_expression(e->lhs.data.binexp, e->lhs.kind);
-    }
-
-    if (e->rhs.kind != LITERAL) {
-        print_expression(e->rhs.data.binexp, e->rhs.kind);
-    }
-
-    if (e->lhs.kind == LITERAL) {
+    } else {
         printf("%d ", e->lhs.data.intval);
     }
 
@@ -140,13 +140,13 @@ static void print_expression(const BinaryExpression *e, ExpressionKind kind) {
             break;
     }
     
-    if (e->rhs.kind == LITERAL) {
+    if (e->rhs.kind != LITERAL) {
+        print_expression(e->rhs.data.binexp, e->rhs.kind);
+    } else {
         printf("%d", e->rhs.data.intval);
     }
 
-    printf(") ");
-
-    if (!e) printf("\n");
+    printf(")");
 }
 #endif
 
@@ -154,9 +154,10 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     Expression exp = expression(parser, tokenizer);
 #ifdef venom_debug
     print_expression(exp.data.binexp, exp.kind);
+    printf("\n");
 #endif
     Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp };
-    consume(parser, tokenizer, TOKEN_SEMICOLON);
+    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the expression.");
     return stmt;
 }
 
@@ -171,6 +172,7 @@ Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
 }
 
 void parse(Parser *parser, Tokenizer *tokenizer, DynArray *stmts) {
+    parser->had_error = false;
     advance(parser, tokenizer);
     while (parser->current.type != TOKEN_EOF) {
         dynarray_insert(stmts, parse_statement(parser, tokenizer));

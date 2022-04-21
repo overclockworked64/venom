@@ -28,6 +28,8 @@ void repl() {
         dynarray_init(&stmts);
         Parser parser;
         parse(&parser, &tokenizer, &stmts);
+
+        if (parser.had_error) continue;
         
         BytecodeChunk chunk;
         init_chunk(&chunk);

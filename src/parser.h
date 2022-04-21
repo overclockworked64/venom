@@ -1,6 +1,7 @@
 #ifndef venom_parser_h
 #define venom_parser_h
 
+#include <stdbool.h>
 #include "dynarray.h"
 #include "tokenizer.h"
 
@@ -35,6 +36,7 @@ typedef struct Statement {
 typedef struct {
     Token current;
     Token previous;
+    bool had_error;
 } Parser;
 
 typedef struct DynArray DynArray;
