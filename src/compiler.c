@@ -30,7 +30,7 @@ void emit_bytes(BytecodeChunk *chunk, int n, ...) {
 
     for (int i = 0; i < n; ++i) {
         uint8_t byte = va_arg(ap, int);
-        emit_byte(chunk, (uint8_t)byte);
+        emit_byte(chunk, byte);
     }
 
     va_end(ap);
