@@ -171,7 +171,7 @@ Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
     return statement(parser, tokenizer);
 }
 
-void parse(Parser *parser, Tokenizer *tokenizer, DynArray *stmts) {
+void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts) {
     parser->had_error = false;
     advance(parser, tokenizer);
     while (parser->current.type != TOKEN_EOF) {

@@ -24,8 +24,7 @@ void repl() {
         Tokenizer tokenizer;
         init_tokenizer(&tokenizer, line);
 
-        DynArray stmts;
-        dynarray_init(&stmts);
+        Statement_DynArray stmts = {0};
         Parser parser;
         parse(&parser, &tokenizer, &stmts);
 

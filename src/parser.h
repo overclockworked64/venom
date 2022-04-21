@@ -39,9 +39,9 @@ typedef struct {
     bool had_error;
 } Parser;
 
-typedef struct DynArray DynArray;
+typedef DynArray(Statement) Statement_DynArray;
 
-void parse(Parser *parser, Tokenizer *tokenizer, DynArray *stmts);
+void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts);
 void free_ast(BinaryExpression *binexp);
 
 #endif
