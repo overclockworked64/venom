@@ -28,7 +28,7 @@ do { \
     int b = pop(vm); \
     int a = pop(vm); \
     push(vm, a op b); \
-} while (false);
+} while (false)
     for (int i = 0; i < chunk->count; ++i) {
         switch (*chunk->ip++) {
             case OP_PRINT: {
