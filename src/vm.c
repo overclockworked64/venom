@@ -28,16 +28,15 @@ do { \
     double a = pop(vm); \
     push(vm, a op b); \
 } while (0)
-    for (int i = 0; i < chunk->count; ++i) {
-        switch (*chunk->ip++) {
+    for (uint8_t *ip = chunk->code.data; ip < &chunk->code.data[chunk->code.count]; ) {
+        switch (*ip++) {
             case OP_PRINT: {
                 double value = pop(vm);
                 printf("%f\n", value);
                 break;
             }
             case OP_CONST: {
-                push(vm, vm->cp[*chunk->ip++]);
-                ++i;
+                push(vm, vm->cp[*ip++]);
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +); break;

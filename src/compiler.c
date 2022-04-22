@@ -6,13 +6,11 @@
 #include "vm.h"
 
 void init_chunk(BytecodeChunk *chunk) {
-    chunk->code = malloc(sizeof(chunk->code[0]) * 255);
-    chunk->count = 0;
-    chunk->ip = chunk->code;
+    dynarray_init(&chunk->code);
 }
 
 void free_chunk(BytecodeChunk *chunk) {
-    free(chunk->code);
+    dynarray_free(&chunk->code);
 }
 
 int add_constant(VM *vm, double constant) {
@@ -21,7 +19,7 @@ int add_constant(VM *vm, double constant) {
 }
 
 void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
-    chunk->code[chunk->count++] = byte;
+    dynarray_insert(&chunk->code, byte);
 }
 
 void emit_bytes(BytecodeChunk *chunk, int n, ...) {
