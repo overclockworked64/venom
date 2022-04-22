@@ -14,8 +14,8 @@ void free_chunk(BytecodeChunk *chunk) {
 }
 
 int add_constant(VM *vm, double constant) {
-    vm->cp[vm->cpp++] = constant;
-    return vm->cpp - 1;
+    dynarray_insert(&vm->cp, constant);
+    return vm->cp.count - 1;
 }
 
 void emit_byte(BytecodeChunk *chunk, uint8_t byte) {

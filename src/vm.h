@@ -4,12 +4,14 @@
 #define STACK_MAX 255
 
 #include "compiler.h"
+#include "dynarray.h"
+
+typedef DynArray(double) Double_DynArray;
 
 typedef struct {
     double stack[STACK_MAX];
     size_t tos;  /* top of stack */
-    double *cp;  /* constant pool */
-    size_t cpp;  /* constant pool pointer */
+    Double_DynArray cp;  /* constant pool */
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;
