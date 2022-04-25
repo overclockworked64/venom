@@ -65,17 +65,9 @@ double table_get(const Table *table, char *key) {
 }
 
 void table_free(const Table *table) {
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < sizeof(table->data) / sizeof(table->data[0]); i++) {
         if (table->data[i] != NULL) {
             list_free(table->data[i]);
         }
     }
-}
-
-int main() {
-    Table table = {0};
-    table_insert(&table, "spam", 1.3);
-    double egg = table_get(&table, "spam");
-    printf("%f", egg);
-    table_free(&table);
 }
