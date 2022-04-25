@@ -56,7 +56,7 @@ void table_insert(Table *table, char *key, double value) {
     list_insert(&table->data[index], key, value);
 }
 
-double table_get(Table *table, char *key) {
+double table_get(const Table *table, char *key) {
     int index = hash(key, strlen(key)) % 1024;
     if (strcmp(table->data[index]->key, key) == 0) {
         return list_find(table->data[index], key);
@@ -64,7 +64,7 @@ double table_get(Table *table, char *key) {
     return -1;
 }
 
-void table_free(Table *table) {
+void table_free(const Table *table) {
     for (int i = 0; i < 1024; i++) {
         if (table->data[i] != NULL) {
             list_free(table->data[i]);
