@@ -58,8 +58,10 @@ void table_insert(Table *table, char *key, double value) {
 
 double table_get(const Table *table, char *key) {
     int index = hash(key, strlen(key)) % 1024;
-    if (strcmp(table->data[index]->key, key) == 0) {
-        return list_find(table->data[index], key);
+    if (table->data[index] != NULL) {
+        if (strcmp(table->data[index]->key, key) == 0) {
+            return list_find(table->data[index], key);
+        }
     }
     return -1;
 }

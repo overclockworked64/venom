@@ -42,6 +42,14 @@ do { \
                 printf("%f\n", value);
                 break;
             }
+            case OP_GET_GLOBAL: {
+                push(vm, *++ip);
+            }
+            case OP_SET_GLOBAL: {
+                int constant = pop(vm);
+                int name_index = pop(vm);
+                table_insert(&vm->globals, vm->sp.data[name_index], constant);
+            }
             case OP_CONST: {
                 /* At this point, ip points to OP_CONST.
                  * We want to increment the ip to point to
@@ -60,13 +68,6 @@ do { \
                  * on the stack. */
                 push(vm, *++ip);
                 break;
-            }
-            case OP_VAR: {
-                int constant = pop(vm);
-                int name_index = pop(vm);
-                table_insert(&vm->globals, vm->sp.data[name_index], constant);
-                double egg = table_get(&vm->globals, vm->sp.data[name_index]);
-                printf("value: %f\n", egg);
             }
             case OP_ADD: BINARY_OP(vm, +); break;
             case OP_SUB: BINARY_OP(vm, -); break;

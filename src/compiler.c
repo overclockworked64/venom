@@ -46,8 +46,13 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         int index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
     } else if (exp.kind == STRING) {
-        int index = add_string(vm, exp.data.sval);
-        emit_bytes(chunk, 2, OP_STR_CONST, index);
+        double value = table_get(&vm->globals, exp.data.sval);
+        if (value == -1) {
+            int index = add_string(vm, exp.data.sval);
+            emit_bytes(chunk, 2, OP_STR_CONST, index);
+        } else {
+            emit_bytes(chunk, 2, OP_GET_GLOBAL, value);
+        }
     } else {
         compile_expression(chunk, vm, exp.data.binexp->lhs);
         compile_expression(chunk, vm, exp.data.binexp->rhs);
@@ -75,8 +80,12 @@ static void print_chunk(BytecodeChunk *chunk) {
                 printf("%d\n", chunk->code.data[++i]);
                 break;
             }
-            case OP_VAR: {
-                printf("OP_VAR\n");
+            case OP_GET_GLOBAL: {
+                printf("OP_GET_GLOBAL\n");
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                printf("OP_SET_GLOBAL\n");
                 break;
             }
             case OP_PRINT: {
@@ -109,10 +118,12 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
         case STATEMENT_PRINT: {
             compile_expression(chunk, vm, stmt.exp);
             emit_byte(chunk, OP_PRINT);
+            break;
         }
         case STATEMENT_LET: {
             compile_expression(chunk, vm, stmt.exp);
-            emit_byte(chunk, OP_VAR);
+            emit_byte(chunk, OP_SET_GLOBAL);
+            break;
         }
         default: break;
     }
