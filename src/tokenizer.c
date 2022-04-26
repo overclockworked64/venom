@@ -77,7 +77,7 @@ static Token identifier(Tokenizer *tokenizer) {
         advance(tokenizer);
         ++length;
     }
-    return make_token(tokenizer, TOKEN_NUMBER, length + 1);
+    return make_token(tokenizer, TOKEN_IDENTIFIER, length + 1);
 }
 
 Token get_token(Tokenizer *tokenizer) {
@@ -94,6 +94,13 @@ Token get_token(Tokenizer *tokenizer) {
         case '(': return make_token(tokenizer, TOKEN_LEFT_PAREN, 1);
         case ')': return make_token(tokenizer, TOKEN_RIGHT_PAREN, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
+        case '=': return make_token(tokenizer, TOKEN_EQUALS, 1);
+        case 'l': {
+            if (lookahead(tokenizer, 2, "et")) {
+                return make_token(tokenizer, TOKEN_LET, 3);
+            }
+            return identifier(tokenizer);
+        }
         case 'p': {
             if (lookahead(tokenizer, 4, "rint")) {
                 return make_token(tokenizer, TOKEN_PRINT, 5);

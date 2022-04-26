@@ -11,8 +11,8 @@ typedef struct Table {
     Bucket *data[1024];
 } Table;
 
-void table_free(Table *table);
+void table_free(const Table *table);
 void table_insert(Table *table, char *key, double value);
-double table_get(Table *table, char *key);
+double table_get(const Table *table, char *key);
 
 #endif

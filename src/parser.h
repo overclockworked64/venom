@@ -6,7 +6,13 @@
 #include "tokenizer.h"
 
 typedef enum {
-    ADD, SUB, MUL, DIV, LITERAL,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    LITERAL,
+    STRING,
+    ASSIGN,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;
@@ -15,8 +21,10 @@ typedef struct Expression {
     ExpressionKind kind;
     union {
         BinaryExpression *binexp;
-        double val;
+        double dval;
+        char *sval;
     } data;
+    char *name;
 } Expression;
 
 typedef struct BinaryExpression {
@@ -25,6 +33,7 @@ typedef struct BinaryExpression {
 } BinaryExpression;
 
 typedef enum {
+    STATEMENT_LET,
     STATEMENT_PRINT,
 } StatementKind;
 
@@ -42,6 +51,6 @@ typedef struct {
 typedef DynArray(Statement) Statement_DynArray;
 
 void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts);
-void free_ast(BinaryExpression *binexp);
+void free_ast(Expression e);
 
 #endif
