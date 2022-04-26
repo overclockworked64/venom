@@ -58,10 +58,10 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         compile_expression(chunk, vm, exp.data.binexp->rhs);
 
         switch (exp.kind) {
-            case ADD:    emit_byte(chunk, OP_ADD); break;
-            case SUB:    emit_byte(chunk, OP_SUB); break;
-            case MUL:    emit_byte(chunk, OP_MUL); break;
-            case DIV:    emit_byte(chunk, OP_DIV); break;
+            case ADD: emit_byte(chunk, OP_ADD); break;
+            case SUB: emit_byte(chunk, OP_SUB); break;
+            case MUL: emit_byte(chunk, OP_MUL); break;
+            case DIV: emit_byte(chunk, OP_DIV); break;
             default: break;
         }
     }
@@ -80,35 +80,14 @@ static void print_chunk(BytecodeChunk *chunk) {
                 printf("%d\n", chunk->code.data[++i]);
                 break;
             }
-            case OP_GET_GLOBAL: {
-                printf("OP_GET_GLOBAL\n");
-                break;
-            }
-            case OP_SET_GLOBAL: {
-                printf("OP_SET_GLOBAL\n");
-                break;
-            }
-            case OP_PRINT: {
-                printf("OP_PRINT\n");
-                break;
-            }
-            case OP_ADD: {
-                printf("OP_ADD\n");
-                break;
-            }
-            case OP_SUB: {
-                printf("OP_SUB\n");
-                break;
-            }
-            case OP_MUL: {
-                printf("OP_MUL\n");
-                break;
-            }
-            case OP_DIV: {
-                printf("OP_DIV\n");
-                break;
-            }
-            default: printf("lolz\n"); break;
+            case OP_GET_GLOBAL: printf("OP_GET_GLOBAL\n"); break;
+            case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
+            case OP_PRINT:      printf("OP_PRINT\n"); break;
+            case OP_ADD:        printf("OP_ADD\n"); break;
+            case OP_SUB:        printf("OP_SUB\n"); break;
+            case OP_MUL:        printf("OP_MUL\n"); break;
+            case OP_DIV:        printf("OP_DIV\n"); break;
+            default:            printf("lolz\n"); break;
         }
     }
 }
