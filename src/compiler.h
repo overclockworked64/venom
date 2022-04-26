@@ -12,7 +12,9 @@ typedef enum {
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_VAR,
     OP_CONST,
+    OP_STR_CONST,
     OP_EXIT,
 } Opcode;
 

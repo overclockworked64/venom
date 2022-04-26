@@ -3,6 +3,8 @@
 
 typedef enum {
     TOKEN_PRINT,
+    TOKEN_LET,
+    TOKEN_IDENTIFIER,
     TOKEN_NUMBER,
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
@@ -10,6 +12,7 @@ typedef enum {
     TOKEN_PLUS, TOKEN_MINUS,
     TOKEN_DOT,
     TOKEN_SEMICOLON,
+    TOKEN_EQUALS,
     TOKEN_EOF,
     TOKEN_ERROR,
 } TokenType;

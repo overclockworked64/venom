@@ -34,7 +34,7 @@ void repl() {
         init_chunk(&chunk);
         for (int i = 0; i < stmts.count; i++) {
             compile(&chunk, &vm, stmts.data[i]);
-            free_ast(stmts.data[i].exp.data.binexp);
+            free_ast(stmts.data[i].exp);
         }
         run(&vm, &chunk);
 
