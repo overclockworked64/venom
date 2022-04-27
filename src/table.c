@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,6 +36,7 @@ static void list_free(Bucket *head) {
 }
 
 static double list_find(Bucket *head, char *item) {
+    printf("head is: %p\n", head);
     while (head != NULL) {
         if (strcmp(head->key, item) == 0) return head->value;
         head = head->next;
@@ -42,7 +44,7 @@ static double list_find(Bucket *head, char *item) {
     return -1;
 }
 
-static uint32_t hash(const char* key, int length) {
+static uint32_t hash(const char *key, int length) {
   uint32_t hash = 2166136261u;
   for (int i = 0; i < length; i++) {
     hash ^= (uint8_t)key[i];
@@ -57,13 +59,9 @@ void table_insert(Table *table, char *key, double value) {
 }
 
 double table_get(const Table *table, char *key) {
+    printf("key is: %s\n", key);
     int index = hash(key, strlen(key)) % 1024;
-    if (table->data[index] != NULL) {
-        if (strcmp(table->data[index]->key, key) == 0) {
-            return list_find(table->data[index], key);
-        }
-    }
-    return -1;
+    return list_find(table->data[index], key);
 }
 
 void table_free(const Table *table) {

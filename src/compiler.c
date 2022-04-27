@@ -46,7 +46,9 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         int index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
     } else if (exp.kind == STRING) {
+        printf("exp.data.sval is: %s\n", exp.data.sval);
         double value = table_get(&vm->globals, exp.data.sval);
+        printf("value is: %f\n", value);
         if (value == -1) {
             int index = add_string(vm, exp.data.sval);
             emit_bytes(chunk, 2, OP_STR_CONST, index);
