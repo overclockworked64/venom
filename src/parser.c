@@ -29,6 +29,7 @@ static void parse_error(Parser *parser, char *message) {
     fprintf(stderr, "parse error: %s\n", message);
 }
 
+#ifdef venom_debug
 static void print_token(Token token) {
     printf("current token: Token { .type: ");
 
@@ -53,6 +54,7 @@ static void print_token(Token token) {
 
     printf(" , value: %.*s }\n", token.length, token.start);
 }
+#endif
 
 static Token advance(Parser *parser, Tokenizer *tokenizer) {
     parser->previous = parser->current;
@@ -104,13 +106,13 @@ static Expression string(Parser *parser) {
 
 static Expression primary();
 
-static ExpressionKind operator(Token token) {
+static char *operator(Token token) {
     switch (token.type) {
-        case TOKEN_PLUS:   return ADD;
-        case TOKEN_MINUS:  return SUB;
-        case TOKEN_STAR:   return MUL;
-        case TOKEN_SLASH:  return DIV;
-        case TOKEN_EQUALS: return ASSIGN;
+        case TOKEN_PLUS:   return "+";
+        case TOKEN_MINUS:  return "-";
+        case TOKEN_STAR:   return "*";
+        case TOKEN_SLASH:  return "/";
+        case TOKEN_EQUALS: return "=";
         default:
             assert(0);
      }
@@ -130,9 +132,12 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = unary(parser, tokenizer);
     while (match(parser, tokenizer, 2, TOKEN_STAR, TOKEN_SLASH)) {
-        ExpressionKind kind = operator(parser->previous);
+        Expression result = { 
+            .kind = BINARY, 
+            .data.binexp = malloc(sizeof(BinaryExpression)), 
+            .operator = operator(parser->previous) 
+        };
         Expression right = unary(parser, tokenizer);
-        Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -143,9 +148,12 @@ static Expression factor(Parser *parser, Tokenizer *tokenizer) {
 static Expression term(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = factor(parser, tokenizer);
     while (match(parser, tokenizer, 2, TOKEN_PLUS, TOKEN_MINUS)) {
-        ExpressionKind kind = operator(parser->previous);
+        Expression result = { 
+            .kind = BINARY,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .operator = operator(parser->previous)
+        };
         Expression right = factor(parser, tokenizer);
-        Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -158,9 +166,8 @@ static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
     char *name = malloc(255);
     snprintf(name, parser->previous.length + 1, "%s", parser->previous.start);
     if (match(parser, tokenizer, 1, TOKEN_EQUALS)) {
-        ExpressionKind kind = operator(parser->previous);
         Expression right = term(parser, tokenizer);
-        Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)), .name = name };
+        Expression result = { .kind = ASSIGN, .data.binexp = malloc(sizeof(BinaryExpression)), .name = name };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -199,10 +206,7 @@ static void print_expression(Expression e) {
         print_expression(e.data.binexp->lhs);
 
         switch (e.kind) {
-            case ADD:    printf(" + "); break;
-            case SUB:    printf(" - "); break;
-            case MUL:    printf(" * "); break;
-            case DIV:    printf(" / "); break;
+            case BINARY: printf(" %s ", e.operator); break;
             case ASSIGN: printf(" = "); break;
             default:
                 break;

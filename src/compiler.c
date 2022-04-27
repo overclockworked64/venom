@@ -60,16 +60,20 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         compile_expression(chunk, vm, exp.data.binexp->lhs);
         compile_expression(chunk, vm, exp.data.binexp->rhs);
 
-        switch (exp.kind) {
-            case ADD: emit_byte(chunk, OP_ADD); break;
-            case SUB: emit_byte(chunk, OP_SUB); break;
-            case MUL: emit_byte(chunk, OP_MUL); break;
-            case DIV: emit_byte(chunk, OP_DIV); break;
+        if (!exp.operator) return;
+     
+        switch (*exp.operator) {
+            case '+': emit_byte(chunk, OP_ADD); break;
+            case '-': emit_byte(chunk, OP_SUB); break;
+            case '*': emit_byte(chunk, OP_MUL); break;
+            case '/': emit_byte(chunk, OP_DIV); break;
+            case '=': emit_byte(chunk, OP_SET_GLOBAL); break;
             default: break;
         }
     }
 }
 
+#ifdef venom_debug
 static void print_chunk(BytecodeChunk *chunk) {
     for (uint8_t i = 0; i < chunk->code.count; i++) {
         switch (chunk->code.data[i]) {
@@ -95,6 +99,7 @@ static void print_chunk(BytecodeChunk *chunk) {
         }
     }
 }
+#endif
 
 void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
     switch (stmt.kind) {

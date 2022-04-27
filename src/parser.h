@@ -6,14 +6,11 @@
 #include "tokenizer.h"
 
 typedef enum {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
     LITERAL,
     STRING,
     ASSIGN,
     UNARY,
+    BINARY,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;
@@ -27,6 +24,7 @@ typedef struct Expression {
         char *sval;
     } data;
     char *name;
+    char *operator;
 } Expression;
 
 typedef struct BinaryExpression {
