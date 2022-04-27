@@ -45,9 +45,6 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
     if (exp.kind == LITERAL) {
         int index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
-    } else if (exp.kind == UNARY) {
-        compile_expression(chunk, vm, *exp.data.exp);
-        emit_byte(chunk, OP_NEGATE);
     } else if (exp.kind == STRING) {
         double value = table_get(&vm->globals, exp.data.sval);
         if (value == -1) {
@@ -56,6 +53,9 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         } else {
             emit_bytes(chunk, 2, OP_GET_GLOBAL, value);
         }
+    } else if (exp.kind == UNARY) {
+        compile_expression(chunk, vm, *exp.data.exp);
+        emit_byte(chunk, OP_NEGATE);
     } else {
         compile_expression(chunk, vm, exp.data.binexp->lhs);
         compile_expression(chunk, vm, exp.data.binexp->rhs);
