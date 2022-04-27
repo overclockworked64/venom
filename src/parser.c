@@ -14,7 +14,7 @@ void free_ast(Expression e) {
     if (e.kind == LITERAL) return;
     else if (e.kind == STRING) free(e.data.sval);
     else if (e.kind == UNARY) free_ast(*e.data.exp);
-    else {
+    else if (e.kind == ASSIGN) {
         free_ast(e.data.binexp->lhs);
         free_ast(e.data.binexp->rhs);
 

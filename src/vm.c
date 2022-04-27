@@ -4,12 +4,14 @@
 #include "vm.h"
 
 void init_vm(VM *vm) {
-    dynarray_init(&vm->cp);
-    dynarray_init(&vm->sp);
-    vm->tos = 0;
+    *vm = (VM){0};
 }
 
 void free_vm(VM *vm) {
+    for (int i = 0; i < vm->sp.count; i++) {
+        free(vm->sp.data[i]);
+    }
+    table_free(&vm->globals);
     dynarray_free(&vm->cp);
     dynarray_free(&vm->sp);
 }
@@ -33,7 +35,7 @@ do { \
 
     for (
         uint8_t *ip = chunk->code.data;
-        ip < &chunk->code.data[chunk->code.count];  /* ip < addr of last instruction */
+        ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
         ip++
     ) {
         switch (*ip) {  /* instruction pointer */
@@ -43,12 +45,14 @@ do { \
                 break;
             }
             case OP_GET_GLOBAL: {
-                push(vm, *++ip);
+                /* value is already on the stack */
+                break;
             }
             case OP_SET_GLOBAL: {
                 int constant = pop(vm);
                 int name_index = pop(vm);
                 table_insert(&vm->globals, vm->sp.data[name_index], constant);
+                break;
             }
             case OP_CONST: {
                 /* At this point, ip points to OP_CONST.
@@ -56,17 +60,17 @@ do { \
                  * the index of the constant in the constant pool
                  * that comes after the opcode, and push the
                  * constant on the stack. */
-                push(vm, vm->cp.data[*++ip]);
+                push(vm, vm->cp.data[*(ip + 1)]);
                 break;
             }
             case OP_STR_CONST: {
-                /* At this point, ip points to OP_CONST.
+                /* At this point, ip points to OP_STR_CONST.
                  * We want to increment the ip to point to
                  * the index of the string constant in the
                  * string constant pool that comes after the
-                 * opcode, and push the indiex of the string constant
+                 * opcode, and push the index of the string constant
                  * on the stack. */
-                push(vm, *++ip);
+                push(vm, *(ip + 1));
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +); break;

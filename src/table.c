@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "table.h"
+#include "util.h"
 
 static void list_insert(Bucket **head, char *key, double item) {
     /* create a new node */
@@ -31,12 +32,12 @@ static void list_free(Bucket *head) {
     while (head != NULL) {
         tmp = head;
         head = head->next;
+        free(tmp->key);
         free(tmp);
     }
 }
 
-static double list_find(Bucket *head, char *item) {
-    printf("head is: %p\n", head);
+static double list_find(Bucket *head, const char *item) {
     while (head != NULL) {
         if (strcmp(head->key, item) == 0) return head->value;
         head = head->next;
@@ -53,12 +54,13 @@ static uint32_t hash(const char *key, int length) {
   return hash;
 }
 
-void table_insert(Table *table, char *key, double value) {
-    int index = hash(key, strlen(key)) % 1024;
-    list_insert(&table->data[index], key, value);
+void table_insert(Table *table, const char *key, double value) {
+    char *k = own_string(key);
+    int index = hash(k, strlen(k)) % 1024;
+    list_insert(&table->data[index], k, value);
 }
 
-double table_get(const Table *table, char *key) {
+double table_get(const Table *table, const char *key) {
     printf("key is: %s\n", key);
     int index = hash(key, strlen(key)) % 1024;
     return list_find(table->data[index], key);
