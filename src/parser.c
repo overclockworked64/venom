@@ -13,6 +13,7 @@
 void free_ast(Expression e) {
     if (e.kind == LITERAL) return;
     else if (e.kind == STRING) free(e.data.sval);
+    else if (e.kind == UNARY) free_ast(*e.data.exp);
     else {
         free_ast(e.data.binexp->lhs);
         free_ast(e.data.binexp->rhs);
@@ -88,7 +89,7 @@ static Token consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char 
 
 static Expression number(Parser *parser) {
     Expression expr;
-    expr.kind = LITERAL,
+    expr.kind = LITERAL;
     expr.data.dval = strtod(parser->previous.start, NULL);
     return expr;
 }
@@ -115,11 +116,22 @@ static ExpressionKind operator(Token token) {
      }
 }
 
-static Expression factor(Parser *parser, Tokenizer *tokenizer) {
+static Expression unary(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = primary(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_MINUS)) {
+        Expression *right = malloc(sizeof(Expression));
+        *right = unary(parser, tokenizer);
+        Expression result = { .kind = UNARY, .data.exp = right };
+        expr = result;
+    }
+    return expr;
+}
+
+static Expression factor(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = unary(parser, tokenizer);
     while (match(parser, tokenizer, 2, TOKEN_STAR, TOKEN_SLASH)) {
         ExpressionKind kind = operator(parser->previous);
-        Expression right = primary(parser, tokenizer);
+        Expression right = unary(parser, tokenizer);
         Expression result = { .kind = kind, .data.binexp = malloc(sizeof(BinaryExpression)) };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
@@ -180,6 +192,9 @@ static void print_expression(Expression e) {
         printf("%f", e.data.dval);
     } else if (e.kind == STRING) {
         printf("%s", e.data.sval);
+    } else if (e.kind == UNARY) {
+        printf("-");
+        print_expression(*e.data.exp);
     } else {
         print_expression(e.data.binexp->lhs);
 

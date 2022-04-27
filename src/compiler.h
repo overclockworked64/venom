@@ -13,6 +13,7 @@ typedef enum {
     OP_MUL,
     OP_DIV,
     OP_CONST,
+    OP_NEGATE,
     OP_STR_CONST,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,

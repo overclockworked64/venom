@@ -13,6 +13,7 @@ typedef enum {
     LITERAL,
     STRING,
     ASSIGN,
+    UNARY,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;
@@ -20,6 +21,7 @@ typedef struct BinaryExpression BinaryExpression;
 typedef struct Expression {
     ExpressionKind kind;
     union {
+        struct Expression *exp;
         BinaryExpression *binexp;
         double dval;
         char *sval;

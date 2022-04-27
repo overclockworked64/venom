@@ -73,6 +73,10 @@ do { \
             case OP_SUB: BINARY_OP(vm, -); break;
             case OP_MUL: BINARY_OP(vm, *); break;
             case OP_DIV: BINARY_OP(vm, /); break;
+            case OP_NEGATE: { 
+                push(vm, -pop(vm));
+                break;
+            }
             case OP_EXIT: return;
             default:
                 break;
