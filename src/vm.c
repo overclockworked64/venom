@@ -60,7 +60,7 @@ do { \
                  * the index of the constant in the constant pool
                  * that comes after the opcode, and push the
                  * constant on the stack. */
-                push(vm, vm->cp.data[*(ip + 1)]);
+                push(vm, vm->cp.data[*++ip]);
                 break;
             }
             case OP_STR_CONST: {
@@ -70,7 +70,7 @@ do { \
                  * string constant pool that comes after the
                  * opcode, and push the index of the string constant
                  * on the stack. */
-                push(vm, *(ip + 1));
+                push(vm, *++ip);
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +); break;
