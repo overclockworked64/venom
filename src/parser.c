@@ -14,12 +14,15 @@ void free_ast(Expression e) {
     if (e.kind == LITERAL) return;
     else if (e.kind == STRING) free(e.data.sval);
     else if (e.kind == UNARY) free_ast(*e.data.exp);
+    else if (e.kind == ASSIGN) {
+        free(e.name);
+        free_ast(e.data.binexp->lhs);
+        free_ast(e.data.binexp->rhs);
+        free(e.data.binexp);
+    }
     else {
         free_ast(e.data.binexp->lhs);
         free_ast(e.data.binexp->rhs);
-
-        if (e.kind == ASSIGN) free(e.name);
-
         free(e.data.binexp);
     }
 }
@@ -163,10 +166,12 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = term(parser, tokenizer);
-    char *name = malloc(255);
-    snprintf(name, parser->previous.length + 1, "%s", parser->previous.start);
     if (match(parser, tokenizer, 1, TOKEN_EQUALS)) {
         Expression right = term(parser, tokenizer);
+
+        char *name = malloc(255);
+        snprintf(name, parser->previous.length + 1, "%s", parser->previous.start);
+
         Expression result = { .kind = ASSIGN, .data.binexp = malloc(sizeof(BinaryExpression)), .name = name };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;

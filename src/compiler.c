@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "compiler.h"
 #include "vm.h"
+#include "util.h"
 
 #define venom_debug
 
@@ -15,8 +17,9 @@ void free_chunk(BytecodeChunk *chunk) {
     dynarray_free(&chunk->code);
 }
 
-int add_string(VM *vm, char *string) {
-    dynarray_insert(&vm->sp, string);
+int add_string(VM *vm, const char *string) {
+    char *s = own_string(string);
+    dynarray_insert(&vm->sp, s);
     return vm->sp.count - 1;
 }
 
@@ -51,7 +54,8 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
             int index = add_string(vm, exp.data.sval);
             emit_bytes(chunk, 2, OP_STR_CONST, index);
         } else {
-            emit_bytes(chunk, 2, OP_GET_GLOBAL, value);
+            int index = add_constant(vm, value);
+            emit_bytes(chunk, 2, OP_GET_GLOBAL, index);
         }
     } else if (exp.kind == UNARY) {
         compile_expression(chunk, vm, *exp.data.exp);
@@ -87,7 +91,11 @@ static void print_chunk(BytecodeChunk *chunk) {
                 printf("%d\n", chunk->code.data[++i]);
                 break;
             }
-            case OP_GET_GLOBAL: printf("OP_GET_GLOBAL\n"); break;
+            case OP_GET_GLOBAL: {
+                printf("OP_GET_GLOBAL : ");
+                printf("%d\n", chunk->code.data[++i]);
+                break;
+            }
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
             case OP_PRINT:      printf("OP_PRINT\n"); break;
             case OP_ADD:        printf("OP_ADD\n"); break;

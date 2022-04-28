@@ -1,7 +1,9 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include "table.h"
+#include "util.h"
 
 static void list_insert(Bucket **head, char *key, double item) {
     /* create a new node */
@@ -30,11 +32,12 @@ static void list_free(Bucket *head) {
     while (head != NULL) {
         tmp = head;
         head = head->next;
+        free(tmp->key);
         free(tmp);
     }
 }
 
-static double list_find(Bucket *head, char *item) {
+static double list_find(Bucket *head, const char *item) {
     while (head != NULL) {
         if (strcmp(head->key, item) == 0) return head->value;
         head = head->next;
@@ -42,7 +45,7 @@ static double list_find(Bucket *head, char *item) {
     return -1;
 }
 
-static uint32_t hash(const char* key, int length) {
+static uint32_t hash(const char *key, int length) {
   uint32_t hash = 2166136261u;
   for (int i = 0; i < length; i++) {
     hash ^= (uint8_t)key[i];
@@ -51,19 +54,15 @@ static uint32_t hash(const char* key, int length) {
   return hash;
 }
 
-void table_insert(Table *table, char *key, double value) {
-    int index = hash(key, strlen(key)) % 1024;
-    list_insert(&table->data[index], key, value);
+void table_insert(Table *table, const char *key, double value) {
+    char *k = own_string(key);
+    int index = hash(k, strlen(k)) % 1024;
+    list_insert(&table->data[index], k, value);
 }
 
-double table_get(const Table *table, char *key) {
+double table_get(const Table *table, const char *key) {
     int index = hash(key, strlen(key)) % 1024;
-    if (table->data[index] != NULL) {
-        if (strcmp(table->data[index]->key, key) == 0) {
-            return list_find(table->data[index], key);
-        }
-    }
-    return -1;
+    return list_find(table->data[index], key);
 }
 
 void table_free(const Table *table) {
