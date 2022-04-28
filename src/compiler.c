@@ -35,12 +35,10 @@ void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
 void emit_bytes(BytecodeChunk *chunk, int n, ...) {
     va_list ap;
     va_start(ap, n);
-
     for (int i = 0; i < n; ++i) {
         uint8_t byte = va_arg(ap, int);
         emit_byte(chunk, byte);
     }
-
     va_end(ap);
 }
 
@@ -81,21 +79,9 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
 static void print_chunk(BytecodeChunk *chunk) {
     for (uint8_t i = 0; i < chunk->code.count; i++) {
         switch (chunk->code.data[i]) {
-            case OP_CONST: {
-                printf("OP_CONST @ ");
-                printf("%d\n", chunk->code.data[++i]);
-                break;
-            }
-            case OP_STR_CONST: {
-                printf("OP_STR_CONST @ ");
-                printf("%d\n", chunk->code.data[++i]);
-                break;
-            }
-            case OP_GET_GLOBAL: {
-                printf("OP_GET_GLOBAL : ");
-                printf("%d\n", chunk->code.data[++i]);
-                break;
-            }
+            case OP_CONST:      printf("OP_CONST @ : %d\n", chunk->code.data[++i]); break;
+            case OP_STR_CONST:  printf("OP_STR_CONST @ %d\n", chunk->code.data[++i]); break;
+            case OP_GET_GLOBAL: printf("OP_GET_GLOBAL : %d\n", chunk->code.data[++i]); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
             case OP_PRINT:      printf("OP_PRINT\n"); break;
             case OP_ADD:        printf("OP_ADD\n"); break;

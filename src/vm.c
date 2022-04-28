@@ -8,9 +8,13 @@ void init_vm(VM *vm) {
 }
 
 void free_vm(VM *vm) {
+    /* free the constant pool array */
     dynarray_free(&vm->cp);
+
+    /* free the string constant pool array and its strings */
     for (int i = 0; i < vm->sp.count; i++) free(vm->sp.data[i]);
     dynarray_free(&vm->sp);
+
     /* free the globals table and its strigns */
     table_free(&vm->globals); 
 }
@@ -44,6 +48,11 @@ do { \
                 break;
             }
             case OP_GET_GLOBAL: {
+                /* At this point, ip points to OP_GET_GLOBAL.
+                 * We want to increment the ip to point to
+                 * the index of the global variable in the
+                 * constant pool that comes after the opcode,
+                 * and push the variable on the stack. */
                 push(vm, vm->cp.data[*++ip]);
                 break;
             }

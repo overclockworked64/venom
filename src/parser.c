@@ -172,7 +172,11 @@ static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
         char *name = malloc(255);
         snprintf(name, parser->previous.length + 1, "%s", parser->previous.start);
 
-        Expression result = { .kind = ASSIGN, .data.binexp = malloc(sizeof(BinaryExpression)), .name = name };
+        Expression result = {
+            .kind = ASSIGN,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .name = name
+        };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
