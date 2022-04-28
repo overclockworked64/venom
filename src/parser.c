@@ -95,14 +95,13 @@ static char *operator(Token token) {
 }
 
 static Expression unary(Parser *parser, Tokenizer *tokenizer) {
-    Expression expr = primary(parser, tokenizer);
     if (match(parser, tokenizer, 1, TOKEN_MINUS)) {
         Expression *right = malloc(sizeof(Expression));
         *right = unary(parser, tokenizer);
         Expression result = { .kind = UNARY, .data.exp = right };
-        expr = result;
+        return result;
     }
-    return expr;
+    return primary(parser, tokenizer);
 }
 
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
