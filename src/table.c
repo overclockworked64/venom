@@ -61,7 +61,6 @@ void table_insert(Table *table, const char *key, double value) {
 }
 
 double table_get(const Table *table, const char *key) {
-    printf("key is: %s\n", key);
     int index = hash(key, strlen(key)) % 1024;
     return list_find(table->data[index], key);
 }

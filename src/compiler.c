@@ -54,7 +54,8 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
             int index = add_string(vm, exp.data.sval);
             emit_bytes(chunk, 2, OP_STR_CONST, index);
         } else {
-            emit_bytes(chunk, 2, OP_GET_GLOBAL, value);
+            int index = add_constant(vm, value);
+            emit_bytes(chunk, 2, OP_GET_GLOBAL, index);
         }
     } else if (exp.kind == UNARY) {
         compile_expression(chunk, vm, *exp.data.exp);

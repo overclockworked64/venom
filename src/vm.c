@@ -8,10 +8,6 @@ void init_vm(VM *vm) {
 }
 
 void free_vm(VM *vm) {
-    for (int i = 0; i < vm->sp.count; i++) {
-        free(vm->sp.data[i]);
-    }
-    table_free(&vm->globals);
     dynarray_free(&vm->cp);
     dynarray_free(&vm->sp);
 }
@@ -45,11 +41,11 @@ do { \
                 break;
             }
             case OP_GET_GLOBAL: {
-                /* value is already on the stack */
+                push(vm, vm->cp.data[*++ip]);
                 break;
             }
             case OP_SET_GLOBAL: {
-                int constant = pop(vm);
+                double constant = pop(vm);
                 int name_index = pop(vm);
                 table_insert(&vm->globals, vm->sp.data[name_index], constant);
                 break;
