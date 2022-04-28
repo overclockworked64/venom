@@ -32,33 +32,6 @@ static void parse_error(Parser *parser, char *message) {
     fprintf(stderr, "parse error: %s\n", message);
 }
 
-#ifdef venom_debug
-static void print_token(Token token) {
-    printf("current token: Token { .type: ");
-
-    switch (token.type) {
-        case TOKEN_PRINT:       printf("TOKEN_PRINT"); break;
-        case TOKEN_LET:         printf("TOKEN_LET"); break;
-        case TOKEN_IDENTIFIER:  printf("TOKEN_IDENTIFIER"); break;
-        case TOKEN_NUMBER:      printf("TOKEN_NUMBER"); break;
-        case TOKEN_LEFT_PAREN:  printf("TOKEN_LEFT_PAREN"); break;
-        case TOKEN_RIGHT_PAREN: printf("TOKEN_RIGHT_PAREN"); break;
-        case TOKEN_STAR:        printf("TOKEN_STAR"); break;
-        case TOKEN_SLASH:       printf("TOKEN_SLASH"); break;
-        case TOKEN_PLUS:        printf("TOKEN_PLUS"); break;
-        case TOKEN_MINUS:       printf("TOKEN_MINUS"); break;
-        case TOKEN_DOT:         printf("TOKEN_DOT"); break;
-        case TOKEN_SEMICOLON:   printf("TOKEN_SEMICOLON"); break;
-        case TOKEN_EQUALS:      printf("TOKEN_EQUALS"); break;
-        case TOKEN_EOF:         printf("TOKEN_EOF"); break;
-        case TOKEN_ERROR:       printf("TOKEN_ERROR"); break;
-        default: break;
-    }
-
-    printf(" , value: %.*s }\n", token.length, token.start);
-}
-#endif
-
 static Token advance(Parser *parser, Tokenizer *tokenizer) {
     parser->previous = parser->current;
     parser->current = get_token(tokenizer);
@@ -250,7 +223,7 @@ static Statement variable_declaration(Parser *parser, Tokenizer *tokenizer) {
 #endif
 
     Statement stmt = { .kind = STATEMENT_LET, .exp = exp };
-    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolor at the end of the statement.");
+    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the statement.");
     return stmt;
 }
 

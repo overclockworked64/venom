@@ -3,6 +3,8 @@
 #include "compiler.h"
 #include "vm.h"
 
+#define venom_debug
+
 void init_vm(VM *vm) {
     *vm = (VM){0};
 }
@@ -44,7 +46,11 @@ do { \
         switch (*ip) {  /* instruction pointer */
             case OP_PRINT: {
                 double value = pop(vm);
+#ifdef venom_debug
+                printf("dbg print :: %.2f\n", value);
+#else
                 printf("%f\n", value);
+#endif
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -58,6 +64,7 @@ do { \
             }
             case OP_SET_GLOBAL: {
                 double constant = pop(vm);
+                printf("constant is: %f\n", constant);
                 int name_index = pop(vm);
                 table_insert(&vm->globals, vm->sp.data[name_index], constant);
                 break;

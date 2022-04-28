@@ -1,6 +1,9 @@
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 #include "tokenizer.h"
+
+#define venom_debug
 
 void init_tokenizer(Tokenizer *tokenizer, char *source) {
     tokenizer->current = source;
@@ -30,7 +33,7 @@ static void skip_whitespace(Tokenizer *tokenizer) {
 }
 
 static bool is_digit(char c) {
-    return c >= '1' && c <= '9';
+    return c >= '0' && c <= '9';
 }
 
 static bool is_alpha(char c) {
@@ -79,6 +82,33 @@ static Token identifier(Tokenizer *tokenizer) {
     }
     return make_token(tokenizer, TOKEN_IDENTIFIER, length + 1);
 }
+
+#ifdef venom_debug
+void print_token(Token token) {
+    printf("current token: Token { .type: ");
+
+    switch (token.type) {
+        case TOKEN_PRINT:       printf("TOKEN_PRINT"); break;
+        case TOKEN_LET:         printf("TOKEN_LET"); break;
+        case TOKEN_IDENTIFIER:  printf("TOKEN_IDENTIFIER"); break;
+        case TOKEN_NUMBER:      printf("TOKEN_NUMBER"); break;
+        case TOKEN_LEFT_PAREN:  printf("TOKEN_LEFT_PAREN"); break;
+        case TOKEN_RIGHT_PAREN: printf("TOKEN_RIGHT_PAREN"); break;
+        case TOKEN_STAR:        printf("TOKEN_STAR"); break;
+        case TOKEN_SLASH:       printf("TOKEN_SLASH"); break;
+        case TOKEN_PLUS:        printf("TOKEN_PLUS"); break;
+        case TOKEN_MINUS:       printf("TOKEN_MINUS"); break;
+        case TOKEN_DOT:         printf("TOKEN_DOT"); break;
+        case TOKEN_SEMICOLON:   printf("TOKEN_SEMICOLON"); break;
+        case TOKEN_EQUALS:      printf("TOKEN_EQUALS"); break;
+        case TOKEN_EOF:         printf("TOKEN_EOF"); break;
+        case TOKEN_ERROR:       printf("TOKEN_ERROR"); break;
+        default: break;
+    }
+
+    printf(", value: '%.*s' }\n", token.length, token.start);
+}
+#endif
 
 Token get_token(Tokenizer *tokenizer) {
     skip_whitespace(tokenizer);

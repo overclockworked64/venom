@@ -37,12 +37,12 @@ static void list_free(Bucket *head) {
     }
 }
 
-static double list_find(Bucket *head, const char *item) {
+static double *list_find(Bucket *head, const char *item) {
     while (head != NULL) {
-        if (strcmp(head->key, item) == 0) return head->value;
+        if (strcmp(head->key, item) == 0) return &head->value;
         head = head->next;
     }
-    return -1;
+    return NULL;
 }
 
 static uint32_t hash(const char *key, int length) {
@@ -60,7 +60,7 @@ void table_insert(Table *table, const char *key, double value) {
     list_insert(&table->data[index], k, value);
 }
 
-double table_get(const Table *table, const char *key) {
+double *table_get(const Table *table, const char *key) {
     int index = hash(key, strlen(key)) % 1024;
     return list_find(table->data[index], key);
 }

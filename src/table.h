@@ -13,6 +13,6 @@ typedef struct Table {
 
 void table_free(const Table *table);
 void table_insert(Table *table, const char *key, double value);
-double table_get(const Table *table, const char *key);
+double *table_get(const Table *table, const char *key);
 
 #endif
