@@ -9,7 +9,10 @@ void init_vm(VM *vm) {
 
 void free_vm(VM *vm) {
     dynarray_free(&vm->cp);
+    for (int i = 0; i < vm->sp.count; i++) free(vm->sp.data[i]);
     dynarray_free(&vm->sp);
+    /* free the globals table and its strigns */
+    table_free(&vm->globals); 
 }
 
 static void push(VM *vm, double value) {
