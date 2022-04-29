@@ -4,8 +4,8 @@ import pytest
 
 def source(a: int, b: int, op: str) -> str:
     return textwrap.dedent(
-        """\
-        print {} {} {};""".format(a, op, b)
+        f"""\
+        print {a} {op} {b};"""
     )
 
 @pytest.mark.parametrize(

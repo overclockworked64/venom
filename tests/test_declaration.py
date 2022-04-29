@@ -4,9 +4,9 @@ import pytest
 
 def source(x: int) -> str:
     return textwrap.dedent(
-        """\
-        let x = {};
-        print x;""".format(x)
+        f"""\
+        let x = {x};
+        print x;"""
     )
 
 @pytest.mark.parametrize(
