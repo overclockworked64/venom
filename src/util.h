@@ -5,5 +5,6 @@
 #include <stdlib.h>
 
 char *own_string(const char *string);
+char *own_string_n(const char *string, int n);
 
 #endif

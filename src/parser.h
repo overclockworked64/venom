@@ -7,8 +7,7 @@
 
 typedef enum {
     LITERAL,
-    STRING,
-    ASSIGN,
+    VARIABLE,
     UNARY,
     BINARY,
 } ExpressionKind;
@@ -21,7 +20,6 @@ typedef struct Expression {
         struct Expression *exp;
         BinaryExpression *binexp;
         double dval;
-        char *sval;
     } data;
     char *name;
     char *operator;
@@ -34,11 +32,13 @@ typedef struct BinaryExpression {
 
 typedef enum {
     STATEMENT_LET,
+    STATEMENT_ASSIGN,
     STATEMENT_PRINT,
 } StatementKind;
 
 typedef struct Statement {
     StatementKind kind;
+    char *name;
     Expression exp;
 } Statement;
 

@@ -7,19 +7,14 @@
 #include "dynarray.h"
 #include "parser.h"
 #include "tokenizer.h"
+#include "util.h"
 
 #define venom_debug
 
 void free_ast(Expression e) {
     if (e.kind == LITERAL) return;
-    else if (e.kind == STRING) free(e.data.sval);
+    else if (e.kind == VARIABLE) free(e.name);
     else if (e.kind == UNARY) free_ast(*e.data.exp);
-    else if (e.kind == ASSIGN) {
-        free(e.name);
-        free_ast(e.data.binexp->lhs);
-        free_ast(e.data.binexp->rhs);
-        free(e.data.binexp);
-    }
     else {
         free_ast(e.data.binexp->lhs);
         free_ast(e.data.binexp->rhs);
@@ -38,7 +33,7 @@ static Token advance(Parser *parser, Tokenizer *tokenizer) {
 #ifdef venom_debug
     print_token(parser->current);
 #endif
-    return parser->current;
+    return parser->previous;
 }
 
 static bool check(Parser *parser, TokenType type) {
@@ -72,11 +67,9 @@ static Expression number(Parser *parser) {
     return expr;
 }
 
-static Expression string(Parser *parser) {
-    Expression expr;
-    expr.kind = STRING,
-    expr.data.sval = malloc(255);
-    snprintf(expr.data.sval, parser->previous.length + 1, "%s", parser->previous.start);
+static Expression variable(Parser *parser) {
+    Expression expr = { .kind = VARIABLE, .name = malloc(255) };
+    snprintf(expr.name, parser->previous.length + 1, "%s", parser->previous.start);
     return expr;
 }
 
@@ -88,7 +81,6 @@ static char *operator(Token token) {
         case TOKEN_MINUS:  return "-";
         case TOKEN_STAR:   return "*";
         case TOKEN_SLASH:  return "/";
-        case TOKEN_EQUALS: return "=";
         default:
             assert(0);
      }
@@ -107,12 +99,13 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = unary(parser, tokenizer);
     while (match(parser, tokenizer, 2, TOKEN_STAR, TOKEN_SLASH)) {
+        char *op = operator(parser->previous);
+        Expression right = unary(parser, tokenizer);
         Expression result = { 
             .kind = BINARY, 
             .data.binexp = malloc(sizeof(BinaryExpression)), 
-            .operator = operator(parser->previous) 
+            .operator = op, 
         };
-        Expression right = unary(parser, tokenizer);
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
         expr = result;
@@ -123,31 +116,12 @@ static Expression factor(Parser *parser, Tokenizer *tokenizer) {
 static Expression term(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = factor(parser, tokenizer);
     while (match(parser, tokenizer, 2, TOKEN_PLUS, TOKEN_MINUS)) {
+        char *op = operator(parser->previous);
+        Expression right = factor(parser, tokenizer);
         Expression result = { 
             .kind = BINARY,
             .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = operator(parser->previous)
-        };
-        Expression right = factor(parser, tokenizer);
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
-        expr = result;
-    }
-    return expr;
-}
-
-static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
-    Expression expr = term(parser, tokenizer);
-    if (match(parser, tokenizer, 1, TOKEN_EQUALS)) {
-        Expression right = term(parser, tokenizer);
-
-        char *name = malloc(255);
-        snprintf(name, parser->previous.length + 1, "%s", parser->previous.start);
-
-        Expression result = {
-            .kind = ASSIGN,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .name = name
+            .operator = op,
         };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;
@@ -157,7 +131,7 @@ static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
 }
 
 static Expression expression(Parser *parser, Tokenizer *tokenizer) {
-    return assignment(parser, tokenizer);
+    return term(parser, tokenizer);
 }
 
 static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
@@ -168,7 +142,7 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_NUMBER)) return number(parser);
-    else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) return string(parser);
+    else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) return variable(parser);
     else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) return grouping(parser, tokenizer);
 }
 
@@ -178,8 +152,8 @@ static void print_expression(Expression e) {
     
     if (e.kind == LITERAL) { 
         printf("%f", e.data.dval);
-    } else if (e.kind == STRING) {
-        printf("%s", e.data.sval);
+    } else if (e.kind == VARIABLE) {
+        printf("%s", e.name);
     } else if (e.kind == UNARY) {
         printf("-");
         print_expression(*e.data.exp);
@@ -188,7 +162,6 @@ static void print_expression(Expression e) {
 
         switch (e.kind) {
             case BINARY: printf(" %s ", e.operator); break;
-            case ASSIGN: printf(" = "); break;
             default:
                 break;
         }
@@ -208,20 +181,26 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp };
+    Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp, .name = NULL };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the expression.");
     return stmt;
 }
 
 static Statement variable_declaration(Parser *parser, Tokenizer *tokenizer) {
-    Expression exp = expression(parser, tokenizer);
+    Token identifier = consume(parser, tokenizer, TOKEN_IDENTIFIER, "Expected identifier after 'let'.");
+    char *name = own_string_n(identifier.start, identifier.length);
+  
+    Expression initializer;
+    if (match(parser, tokenizer, 1, TOKEN_EQUALS)) {
+        initializer = expression(parser, tokenizer);
+    }
 
 #ifdef venom_debug
-    print_expression(exp);
+    print_expression(initializer);
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STATEMENT_LET, .exp = exp };
+    Statement stmt = { .kind = STATEMENT_LET, .name = name, .exp = initializer };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the statement.");
     return stmt;
 }

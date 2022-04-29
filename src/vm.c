@@ -64,7 +64,6 @@ do { \
             }
             case OP_SET_GLOBAL: {
                 double constant = pop(vm);
-                printf("constant is: %f\n", constant);
                 int name_index = pop(vm);
                 table_insert(&vm->globals, vm->sp.data[name_index], constant);
                 break;

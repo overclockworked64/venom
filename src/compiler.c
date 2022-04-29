@@ -32,7 +32,7 @@ void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
     dynarray_insert(&chunk->code, byte);
 }
 
-void emit_bytes(BytecodeChunk *chunk, int n, ...) {
+void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
     va_list ap;
     va_start(ap, n);
     for (int i = 0; i < n; ++i) {
@@ -42,17 +42,20 @@ void emit_bytes(BytecodeChunk *chunk, int n, ...) {
     va_end(ap);
 }
 
+static void compile_error(char *variable) {
+    fprintf(stderr, "compile error: variable '%s' is not defined.", variable);
+}
+
 void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
     if (exp.kind == LITERAL) {
         int index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
-    } else if (exp.kind == STRING) {
-        double *value = table_get(&vm->globals, exp.data.sval);
+    } else if (exp.kind == VARIABLE) {
+        double *value = table_get(&vm->globals, exp.name);
         if (value == NULL) {
-            int index = add_string(vm, exp.data.sval);
-            emit_bytes(chunk, 2, OP_STR_CONST, index);
+            compile_error(exp.name);
         } else {
-            int index = add_constant(vm, *value);
+            uint8_t index = add_constant(vm, *value);
             emit_bytes(chunk, 2, OP_GET_GLOBAL, index);
         }
     } else if (exp.kind == UNARY) {
@@ -61,15 +64,12 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
     } else {
         compile_expression(chunk, vm, exp.data.binexp->lhs);
         compile_expression(chunk, vm, exp.data.binexp->rhs);
-
-        if (!exp.operator) return;
-     
+ 
         switch (*exp.operator) {
             case '+': emit_byte(chunk, OP_ADD); break;
             case '-': emit_byte(chunk, OP_SUB); break;
             case '*': emit_byte(chunk, OP_MUL); break;
             case '/': emit_byte(chunk, OP_DIV); break;
-            case '=': emit_byte(chunk, OP_SET_GLOBAL); break;
             default: break;
         }
     }
@@ -79,7 +79,7 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
 static void print_chunk(BytecodeChunk *chunk) {
     for (uint8_t i = 0; i < chunk->code.count; i++) {
         switch (chunk->code.data[i]) {
-            case OP_CONST:      printf("OP_CONST @ : %d\n", chunk->code.data[++i]); break;
+            case OP_CONST:      printf("OP_CONST @ %d\n", chunk->code.data[++i]); break;
             case OP_STR_CONST:  printf("OP_STR_CONST @ %d\n", chunk->code.data[++i]); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL : %d\n", chunk->code.data[++i]); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
@@ -103,6 +103,8 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
             break;
         }
         case STATEMENT_LET: {
+            int name_index = add_string(vm, stmt.name);
+            emit_bytes(chunk, 3, OP_STR_CONST, name_index);
             compile_expression(chunk, vm, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);
             break;
