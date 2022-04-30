@@ -17,13 +17,12 @@ import pytest
     ]
 )
 def test_declarations(value, expected):
-    def source(x: int) -> str:
-        return textwrap.dedent(
-            f"""\
-            let x = {x};
-            print x;"""
-        )
-    output = subprocess.check_output(["./a.out"], input=source(value).encode('utf-8'))
+    source = textwrap.dedent(
+        f"""\
+        let x = {value};
+        print x;"""
+    )
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
 
@@ -56,11 +55,10 @@ def test_declarations(value, expected):
     ]
 )
 def test_declarations_with_expressions(a, op, b, expected):
-    def source(a: int, b: int, op: str) -> str:
-        return textwrap.dedent(
-            f"""\
-            let x = {a} {op} {b};
-            print x;"""
-        )
-    output = subprocess.check_output(["./a.out"], input=source(a, b, op).encode('utf-8'))
+    source = textwrap.dedent(
+        f"""\
+        let x = {a} {op} {b};
+        print x;"""
+    )
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output

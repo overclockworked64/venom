@@ -31,12 +31,11 @@ import pytest
     ]
 )
 def test_calculator(a, op, b, expected):
-    def source(a: int, b: int, op: str) -> str:
-        return textwrap.dedent(
-            f"""\
-            print {a} {op} {b};"""
-        )
-    output = subprocess.check_output(["./a.out"], input=source(a, b, op).encode('utf-8'))
+    source = textwrap.dedent(
+        f"""\
+        print {a} {op} {b};"""
+    )
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
 
@@ -52,12 +51,11 @@ def test_calculator(a, op, b, expected):
     ]
 )
 def test_calculator_grouping(a, op, b, op2, c, expected):
-    def source(a: int, b: int, c: int, op: str, op2: str) -> str:
-        return textwrap.dedent(
-            f"""\
-            print ({a} {op} {b}) {op2} {c};"""
-        )
-    output = subprocess.check_output(["./a.out"], input=source(a, b, c, op, op2).encode('utf-8'))
+    source = textwrap.dedent(
+        f"""\
+        print ({a} {op} {b}) {op2} {c};"""
+    )
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
 def test_calculator_grouping_nested():
