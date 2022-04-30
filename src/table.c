@@ -57,7 +57,18 @@ static uint32_t hash(const char *key, int length) {
 void table_insert(Table *table, const char *key, double value) {
     char *k = own_string(key);
     int index = hash(k, strlen(k)) % 1024;
-    list_insert(&table->data[index], k, value);
+    if (list_find(table->data[index], key) == NULL) {
+      list_insert(&table->data[index], k, value);
+    } else {
+        /* If the key is already in the list, change its value. */
+        Bucket *head = table->data[index];
+        while (head != NULL) {
+            if (strcmp(head->key, key) == 0) {
+                table->data[index]->value = value;
+            }
+            head = head->next;
+        }
+    }
 }
 
 double *table_get(const Table *table, const char *key) {

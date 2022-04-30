@@ -104,7 +104,7 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
         }
         case STATEMENT_LET: {
             int name_index = add_string(vm, stmt.name);
-            emit_bytes(chunk, 3, OP_STR_CONST, name_index);
+            emit_bytes(chunk, 2, OP_STR_CONST, name_index);
             compile_expression(chunk, vm, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);
             break;
