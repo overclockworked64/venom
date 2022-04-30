@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "venom"
+version = "0.1.0"
+description = ""
+authors = ["overclockworked64 <overclockworked64@users.noreply.github.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytest = "^7.1.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

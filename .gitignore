@@ -3,3 +3,4 @@ a.out
 __pycache__/
 .pytest_cache/
 env/
+.python-version
