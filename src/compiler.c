@@ -51,7 +51,6 @@ void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
         uint8_t index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
     } else if (exp.kind == VARIABLE) {
-        printf("exp.name is: %s\n", exp.name);
         uint8_t name_index = add_string(vm, exp.name);
         emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
     } else if (exp.kind == UNARY) {
