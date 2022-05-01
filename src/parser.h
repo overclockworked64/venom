@@ -51,6 +51,7 @@ typedef struct {
 typedef DynArray(Statement) Statement_DynArray;
 
 void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts);
-void free_ast(Expression e);
+void free_expression(Expression e);
+void free_stmt(Statement stmt);
 
 #endif

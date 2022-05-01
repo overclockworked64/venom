@@ -2,6 +2,7 @@ import textwrap
 import subprocess
 import pytest
 
+
 @pytest.mark.parametrize(
     "a, b",
     [   # 1-digit operands ops

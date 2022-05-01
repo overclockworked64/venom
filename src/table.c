@@ -46,28 +46,30 @@ static double *list_find(Bucket *head, const char *item) {
 }
 
 static uint32_t hash(const char *key, int length) {
-  uint32_t hash = 2166136261u;
-  for (int i = 0; i < length; i++) {
-    hash ^= (uint8_t)key[i];
-    hash *= 16777619;
-  }
-  return hash;
+    /* copy-paste from 'crafting interpreters' */
+    uint32_t hash = 2166136261u;
+    for (int i = 0; i < length; i++) {
+        hash ^= (uint8_t)key[i];
+        hash *= 16777619;
+    }
+    return hash;
 }
 
 void table_insert(Table *table, const char *key, double value) {
     char *k = own_string(key);
     int index = hash(k, strlen(k)) % 1024;
-    if (list_find(table->data[index], key) == NULL) {
-      list_insert(&table->data[index], k, value);
+    if (list_find(table->data[index], k) == NULL) {
+        list_insert(&table->data[index], k, value);
     } else {
         /* If the key is already in the list, change its value. */
         Bucket *head = table->data[index];
         while (head != NULL) {
-            if (strcmp(head->key, key) == 0) {
+            if (strcmp(head->key, k) == 0) {
                 table->data[index]->value = value;
             }
             head = head->next;
         }
+        free(k);
     }
 }
 

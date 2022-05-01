@@ -17,13 +17,13 @@ void free_chunk(BytecodeChunk *chunk) {
     dynarray_free(&chunk->code);
 }
 
-int add_string(VM *vm, const char *string) {
+uint8_t add_string(VM *vm, const char *string) {
     char *s = own_string(string);
     dynarray_insert(&vm->sp, s);
     return vm->sp.count - 1;
 }
 
-int add_constant(VM *vm, double constant) {
+uint8_t add_constant(VM *vm, double constant) {
     dynarray_insert(&vm->cp, constant);
     return vm->cp.count - 1;
 }
@@ -48,16 +48,12 @@ static void compile_error(char *variable) {
 
 void compile_expression(BytecodeChunk *chunk, VM *vm, Expression exp) {
     if (exp.kind == LITERAL) {
-        int index = add_constant(vm, exp.data.dval);
+        uint8_t index = add_constant(vm, exp.data.dval);
         emit_bytes(chunk, 2, OP_CONST, index);
     } else if (exp.kind == VARIABLE) {
-        double *value = table_get(&vm->globals, exp.name);
-        if (value == NULL) {
-            compile_error(exp.name);
-        } else {
-            uint8_t index = add_constant(vm, *value);
-            emit_bytes(chunk, 2, OP_GET_GLOBAL, index);
-        }
+        printf("exp.name is: %s\n", exp.name);
+        uint8_t name_index = add_string(vm, exp.name);
+        emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
     } else if (exp.kind == UNARY) {
         compile_expression(chunk, vm, *exp.data.exp);
         emit_byte(chunk, OP_NEGATE);
@@ -103,7 +99,7 @@ void compile(BytecodeChunk *chunk, VM *vm, Statement stmt) {
             break;
         }
         case STATEMENT_LET: {
-            int name_index = add_string(vm, stmt.name);
+            uint8_t name_index = add_string(vm, stmt.name);
             emit_bytes(chunk, 2, OP_STR_CONST, name_index);
             compile_expression(chunk, vm, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);

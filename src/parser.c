@@ -11,13 +11,18 @@
 
 #define venom_debug
 
-void free_ast(Expression e) {
+void free_stmt(Statement stmt) {
+    if (stmt.kind == STATEMENT_LET) free(stmt.name);
+    free_expression(stmt.exp);
+}
+
+void free_expression(Expression e) {
     if (e.kind == LITERAL) return;
     else if (e.kind == VARIABLE) free(e.name);
-    else if (e.kind == UNARY) free_ast(*e.data.exp);
+    else if (e.kind == UNARY) free_expression(*e.data.exp);
     else {
-        free_ast(e.data.binexp->lhs);
-        free_ast(e.data.binexp->rhs);
+        free_expression(e.data.binexp->lhs);
+        free_expression(e.data.binexp->rhs);
         free(e.data.binexp);
     }
 }
@@ -68,8 +73,8 @@ static Expression number(Parser *parser) {
 }
 
 static Expression variable(Parser *parser) {
-    Expression expr = { .kind = VARIABLE, .name = malloc(255) };
-    snprintf(expr.name, parser->previous.length + 1, "%s", parser->previous.start);
+    char *name = own_string_n(parser->previous.start, parser->previous.length);
+    Expression expr = { .kind = VARIABLE, .name = name };
     return expr;
 }
 
@@ -210,6 +215,8 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return print_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LET)) {
         return variable_declaration(parser, tokenizer);
+    } else {
+        assert(0);
     }
 }
 

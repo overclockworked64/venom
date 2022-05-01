@@ -2,6 +2,20 @@ import textwrap
 import subprocess
 import pytest
 
+
+@pytest.mark.parametrize(
+    "value",
+    [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
+)
+def test_declarations_oneliner(value):
+    source = textwrap.dedent(
+        f"""let x = {value}; print x;"""
+    )
+    expected = '%.2f' % value
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
+    assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+
+
 @pytest.mark.parametrize(
     "value",
     [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
@@ -15,6 +29,52 @@ def test_declarations(value):
     expected = '%.2f' % value
     output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+
+
+@pytest.mark.parametrize(
+    "value",
+    [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
+)
+def test_printing_declared_variable(value):
+    source = textwrap.dedent(
+        f"""\
+        let x = {value};
+        print x + 1;"""
+    )
+    expected = '%.2f' % (value + 1)
+    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
+    assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+
+
+@pytest.mark.parametrize(
+    "x, y",
+    [
+        [1, -1],
+        [23, -23],
+        [3.14, -3.14],
+        [100, -100],
+    ]
+)
+def test_printing_declared_variables(x, y):
+   for op in {'+', '-', '*', '/'}:
+        source = textwrap.dedent(
+            f"""\
+            let x = {x};
+            let y = {y};
+            print x {op} y + 2;"""
+        )
+        match op:
+            case '+': 
+                expected = "%.2f" % (x + y + 2)
+            case '-': 
+                expected = "%.2f" % (x - y + 2)
+            case '*': 
+                expected = "%.2f" % (x * y + 2)
+            case '/': 
+                expected = "%.2f" % (x / y + 2)
+
+        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
 
 @pytest.mark.parametrize(

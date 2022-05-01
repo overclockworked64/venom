@@ -21,6 +21,11 @@ void free_vm(VM *vm) {
     table_free(&vm->globals); 
 }
 
+static void runtime_error(const char *variable) {
+    fprintf(stderr, "runtime error: Variable '%s' is not defined.\n", variable);
+    exit(1);
+}
+
 static void push(VM *vm, double value) {
     vm->stack[vm->tos++] = value;
 }
@@ -54,12 +59,11 @@ do { \
                 break;
             }
             case OP_GET_GLOBAL: {
-                /* At this point, ip points to OP_GET_GLOBAL.
-                 * We want to increment the ip to point to
-                 * the index of the global variable in the
-                 * constant pool that comes after the opcode,
-                 * and push the variable on the stack. */
-                push(vm, vm->cp.data[*++ip]);
+                int name_index = *++ip;
+                printf("name is: %s\n", vm->sp.data[name_index]);
+                double *value = table_get(&vm->globals, vm->sp.data[name_index]);
+                if (value == NULL) runtime_error(vm->sp.data[name_index]);                
+                push(vm, *value);
                 break;
             }
             case OP_SET_GLOBAL: {
