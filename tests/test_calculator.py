@@ -1,5 +1,5 @@
-import textwrap
 import subprocess
+import itertools
 import pytest
 
 
@@ -22,10 +22,7 @@ import pytest
 )
 def test_calculator(a, b):
     for op in {'+', '-', '*', '/'}:
-        source = textwrap.dedent(
-            f"""\
-            print {a} {op} {b};"""
-        )
+        source = f"print {a} {op} {b};"
         expected = "%.2f" % eval(f"{a} {op} {b}")
         output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
         assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
@@ -45,15 +42,12 @@ def test_calculator(a, b):
     ]
 )
 def test_calculator_grouping(a, b, c):
-    for op in {'+', '-', '*', '/'}:
-        for op2 in {'+', '-', '*', '/'}:
-            source = textwrap.dedent(
-                f"""\
-                print ({a} {op} {b}) {op2} {c};"""
-            )
-            expected = "%.2f" % eval(f"({a} {op} {b}) {op2} {c}")
-            output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-            assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+    for op, op2 in itertools.permutations({'+', '-', '*', '/'}, 2):
+        source = f"print ({a} {op} {b}) {op2} {c};"
+        expected = "%.2f" % eval(f"({a} {op} {b}) {op2} {c}")
+        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+
 
 def test_calculator_grouping_nested():
     source = "print (((6 + (4 * 2)) - 4) / 2);"
