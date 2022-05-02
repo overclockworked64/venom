@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "compiler.h"
 #include "vm.h"
 
 #define venom_debug
 
 void init_vm(VM *vm) {
-    *vm = (VM){0};
+    memset(vm, 0, sizeof(*vm));
 }
 
 void free_vm(VM* vm) {
