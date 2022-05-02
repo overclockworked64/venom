@@ -63,16 +63,7 @@ def test_printing_declared_variables(x, y):
             let y = {y};
             print x {op} y + 2;"""
         )
-        match op:
-            case '+': 
-                expected = "%.2f" % (x + y + 2)
-            case '-': 
-                expected = "%.2f" % (x - y + 2)
-            case '*': 
-                expected = "%.2f" % (x * y + 2)
-            case '/': 
-                expected = "%.2f" % (x / y + 2)
-
+        expected = "%.2f" % eval(f"{x} {op} {y} + 2")
         output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
         assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
@@ -101,14 +92,6 @@ def test_declarations_with_expressions(a, b):
             let x = {a} {op} {b};
             print x;"""
         )
-        match op:
-            case '+': 
-                expected = "%.2f" % (a + b)
-            case '-': 
-                expected = "%.2f" % (a - b)
-            case '*': 
-                expected = "%.2f" % (a * b)
-            case '/': 
-                expected = "%.2f" % (a / b)
+        expected = "%.2f" % eval(f"{a} {op} {b}")
         output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
         assert "dbg print :: {}\n".format(expected).encode('utf-8') in output

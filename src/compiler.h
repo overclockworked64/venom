@@ -24,10 +24,14 @@ typedef DynArray(uint8_t) Uint8DynArray;
 
 typedef struct BytecodeChunk {
     Uint8DynArray code;
+    double cp[POOL_MAX];  /* constant pool */
+    uint8_t cp_count;
+    char *sp[POOL_MAX];   /* string pool */
+    uint8_t sp_count;
 } BytecodeChunk;
 
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-void compile(BytecodeChunk *chunk, VM *vm, Statement stmt);
+void compile(BytecodeChunk *chunk, Statement stmt);
 
 #endif

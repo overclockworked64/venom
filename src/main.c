@@ -33,7 +33,7 @@ void repl() {
         BytecodeChunk chunk;
         init_chunk(&chunk);
         for (int i = 0; i < stmts.count; i++) {
-            compile(&chunk, &vm, stmts.data[i]);
+            compile(&chunk, stmts.data[i]);
             free_stmt(stmts.data[i]);
         }
         run(&vm, &chunk);
@@ -42,7 +42,6 @@ void repl() {
         free_chunk(&chunk);
         free(line);
     }
-
     free_vm(&vm);
 }
 

@@ -1,20 +1,16 @@
 #ifndef venom_vm_h
 #define venom_vm_h
 
-#define STACK_MAX 255
+#define STACK_MAX 256
+#define POOL_MAX 256
 
 #include "compiler.h"
 #include "dynarray.h"
 #include "table.h"
 
-typedef DynArray(double) Double_DynArray;
-typedef DynArray(char *) String_DynArray;
-
 typedef struct {
     double stack[STACK_MAX];
-    size_t tos;  /* top of stack */
-    Double_DynArray cp;  /* constant pool */
-    String_DynArray sp;  /* string constant pool */
+    size_t tos;           /* top of stack */
     Table globals;
 } VM;
 
