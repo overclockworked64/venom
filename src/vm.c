@@ -10,7 +10,7 @@ void init_vm(VM *vm) {
 }
 
 void free_vm(VM* vm) {
-    /* free the globals table and its strigns */
+    /* free the globals table and its strings */
     table_free(&vm->globals); 
 }
 
@@ -79,8 +79,8 @@ do { \
                  * We want to increment the ip to point to
                  * the index of the string constant in the
                  * string constant pool that comes after the
-                 * opcode, and push the index of the string constant
-                 * on the stack. */
+                 * opcode, and push the /index/ of the string
+                 * constant on the stack. */
                 push(vm, *++ip);
                 break;
             }
