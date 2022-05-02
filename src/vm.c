@@ -53,7 +53,6 @@ do { \
             }
             case OP_GET_GLOBAL: {
                 int name_index = *++ip;
-                printf("name is: %s\n", chunk->sp[name_index]);
                 double *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) runtime_error(chunk->sp[name_index]);                
                 push(vm, *value);
