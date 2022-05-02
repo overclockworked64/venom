@@ -26,15 +26,7 @@ def test_calculator(a, b):
             f"""\
             print {a} {op} {b};"""
         )
-        match op:
-            case '+': 
-                expected = "%.2f" % (a + b)
-            case '-': 
-                expected = "%.2f" % (a - b)
-            case '*': 
-                expected = "%.2f" % (a * b)
-            case '/': 
-                expected = "%.2f" % (a / b)
+        expected = "%.2f" % eval(f"{a} {op} {b}")
         output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
         assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 
@@ -59,19 +51,7 @@ def test_calculator_grouping(a, b, c):
                 f"""\
                 print ({a} {op} {b}) {op2} {c};"""
             )
-
-            match op:
-                case '+': in_parens = (a + b)
-                case '-': in_parens = (a - b)
-                case '*': in_parens = (a * b)
-                case '/': in_parens = (a / b)
-
-            match op2:
-                case '+': expected = "%.2f" % (in_parens + c)
-                case '-': expected = "%.2f" % (in_parens - c)
-                case '*': expected = "%.2f" % (in_parens * c)
-                case '/': expected = "%.2f" % (in_parens / c)
-            
+            expected = "%.2f" % eval(f"({a} {op} {b}) {op2} {c}")
             output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
             assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
 

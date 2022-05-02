@@ -9,14 +9,7 @@ void init_vm(VM *vm) {
     *vm = (VM){0};
 }
 
-void free_vm(VM *vm) {
-    /* free the constant pool array */
-    dynarray_free(&vm->cp);
-
-    /* free the string constant pool array and its strings */
-    for (int i = 0; i < vm->sp.count; i++) free(vm->sp.data[i]);
-    dynarray_free(&vm->sp);
-
+void free_vm(VM* vm) {
     /* free the globals table and its strigns */
     table_free(&vm->globals); 
 }
@@ -60,16 +53,16 @@ do { \
             }
             case OP_GET_GLOBAL: {
                 int name_index = *++ip;
-                printf("name is: %s\n", vm->sp.data[name_index]);
-                double *value = table_get(&vm->globals, vm->sp.data[name_index]);
-                if (value == NULL) runtime_error(vm->sp.data[name_index]);                
+                printf("name is: %s\n", chunk->sp[name_index]);
+                double *value = table_get(&vm->globals, chunk->sp[name_index]);
+                if (value == NULL) runtime_error(chunk->sp[name_index]);                
                 push(vm, *value);
                 break;
             }
             case OP_SET_GLOBAL: {
                 double constant = pop(vm);
                 int name_index = pop(vm);
-                table_insert(&vm->globals, vm->sp.data[name_index], constant);
+                table_insert(&vm->globals, chunk->sp[name_index], constant);
                 break;
             }
             case OP_CONST: {
@@ -78,7 +71,7 @@ do { \
                  * the index of the constant in the constant pool
                  * that comes after the opcode, and push the
                  * constant on the stack. */
-                push(vm, vm->cp.data[*++ip]);
+                push(vm, chunk->cp[*++ip]);
                 break;
             }
             case OP_STR_CONST: {
