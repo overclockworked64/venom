@@ -154,26 +154,28 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
 #ifdef venom_debug
 static void print_expression(Expression e) {
     printf("(");
-    
-    if (e.kind == LITERAL) { 
-        printf("%f", e.data.dval);
-    } else if (e.kind == VARIABLE) {
-        printf("%s", e.name);
-    } else if (e.kind == UNARY) {
-        printf("-");
-        print_expression(*e.data.exp);
-    } else {
-        print_expression(e.data.binexp->lhs);
-
-        switch (e.kind) {
-            case BINARY: printf(" %s ", e.operator); break;
-            default:
-                break;
+    switch (e.kind) {
+        case LITERAL: {
+            printf("%f", e.data.dval);
+            break;
         }
-
-        print_expression(e.data.binexp->rhs);
+        case VARIABLE: {
+            printf("%s", e.name);
+            break;
+        }
+        case UNARY: {
+            printf("-");
+            print_expression(*e.data.exp);
+            break;
+        }
+        case BINARY: {
+            print_expression(e.data.binexp->lhs);
+            printf(" %s ", e.operator);
+            print_expression(e.data.binexp->rhs);
+            break;
+        }
+        default: assert(0);
     }
-
     printf(")");
 }
 #endif

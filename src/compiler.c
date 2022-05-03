@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,26 +48,37 @@ void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
 }
 
 void compile_expression(BytecodeChunk *chunk, Expression exp) {
-    if (exp.kind == LITERAL) {
-        uint8_t index = add_constant(chunk, exp.data.dval);
-        emit_bytes(chunk, 2, OP_CONST, index);
-    } else if (exp.kind == VARIABLE) {
-        uint8_t name_index = add_string(chunk, exp.name);
-        emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
-    } else if (exp.kind == UNARY) {
-        compile_expression(chunk, *exp.data.exp);
-        emit_byte(chunk, OP_NEGATE);
-    } else {
-        compile_expression(chunk, exp.data.binexp->lhs);
-        compile_expression(chunk, exp.data.binexp->rhs);
- 
-        switch (*exp.operator) {
-            case '+': emit_byte(chunk, OP_ADD); break;
-            case '-': emit_byte(chunk, OP_SUB); break;
-            case '*': emit_byte(chunk, OP_MUL); break;
-            case '/': emit_byte(chunk, OP_DIV); break;
-            default: break;
+    switch (exp.kind) {
+        case LITERAL: {
+            uint8_t const_index = add_constant(chunk, exp.data.dval);
+            emit_bytes(chunk, 2, OP_CONST, const_index);
+            break;
         }
+        case VARIABLE: {
+            uint8_t name_index = add_string(chunk, exp.name);
+            emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
+            break;
+        }
+        case UNARY: {
+            compile_expression(chunk, *exp.data.exp);
+            emit_byte(chunk, OP_NEGATE);
+            break;
+        }
+        case BINARY: {
+            compile_expression(chunk, exp.data.binexp->lhs);
+            compile_expression(chunk, exp.data.binexp->rhs);
+
+            switch (*exp.operator) {
+                case '+': emit_byte(chunk, OP_ADD); break;
+                case '-': emit_byte(chunk, OP_SUB); break;
+                case '*': emit_byte(chunk, OP_MUL); break;
+                case '/': emit_byte(chunk, OP_DIV); break;
+                default: break;
+            }
+
+            break;
+        }
+        default: assert(0);
     }
 }
 
@@ -104,7 +116,7 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             emit_byte(chunk, OP_SET_GLOBAL);
             break;
         }
-        default: break;
+        default: assert(0);
     }
 #ifdef venom_debug
     print_chunk(chunk);

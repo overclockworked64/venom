@@ -8,9 +8,7 @@ import pytest
     [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
 )
 def test_declarations_oneliner(value):
-    source = textwrap.dedent(
-        f"""let x = {value}; print x;"""
-    )
+    source = textwrap.dedent(f"let x = {value}; print x;")
     expected = '%.2f' % value
     output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
     assert "dbg print :: {}\n".format(expected).encode('utf-8') in output

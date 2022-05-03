@@ -114,8 +114,8 @@ Token get_token(Tokenizer *tokenizer) {
     skip_whitespace(tokenizer);
 
     char c = advance(tokenizer);
-    if (is_digit(c)) return number(tokenizer);
     if (c == '\0') return make_token(tokenizer, TOKEN_EOF, 0);
+    if (is_digit(c)) return number(tokenizer);
     switch (c) {
         case '+': return make_token(tokenizer, TOKEN_PLUS, 1);
         case '-': return make_token(tokenizer, TOKEN_MINUS, 1);

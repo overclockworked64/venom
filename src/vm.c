@@ -52,6 +52,15 @@ do { \
                 break;
             }
             case OP_GET_GLOBAL: {
+                /* At this point, ip points to OP_GET_GLOBAL.
+                 * Since this is a 2-byte instruction with an
+                 * immediate operand (the index of the name of
+                 * the looked up variable in the string constant
+                 * pool), we want to increment the ip so it points
+                 * to the /index/ of the string in the string
+                 * constant pool that comes after the opcode. We
+                 * then look up the variable and push its value on
+                 * the stack. If we can't find the variable, we bail out. */
                 int name_index = *++ip;
                 double *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
@@ -62,6 +71,13 @@ do { \
                 break;
             }
             case OP_SET_GLOBAL: {
+                /* At this point, ip points to OP_SET_GLOBAL.
+                 * This is a single-byte instruction that expects
+                 * two things to already be on the stack: the index
+                 * of the variable name in the string constant pool,
+                 * and the value of the double constant that the name
+                 * refers to. We pop these two and add the variable
+                 * to the globals table. */
                 double constant = pop(vm);
                 int name_index = pop(vm);
                 table_insert(&vm->globals, chunk->sp[name_index], constant);
@@ -69,20 +85,24 @@ do { \
             }
             case OP_CONST: {
                 /* At this point, ip points to OP_CONST.
-                 * We want to increment the ip to point to
-                 * the index of the constant in the constant pool
-                 * that comes after the opcode, and push the
-                 * constant on the stack. */
+                 * Since this is a 2-byte instruction with an
+                 * immediate operand (the index of the double
+                 * constant in the constant pool), we want to
+                 * increment the ip to point to the index of
+                 * the constant in the constant pool that comes
+                 * after the opcode, and push the constant on
+                 * the stack. */
                 push(vm, chunk->cp[*++ip]);
                 break;
             }
             case OP_STR_CONST: {
                 /* At this point, ip points to OP_STR_CONST.
-                 * We want to increment the ip to point to
-                 * the index of the string constant in the
-                 * string constant pool that comes after the
-                 * opcode, and push the /index/ of the string
-                 * constant on the stack. */
+                 * Since this is a 2-byte instruction with an
+                 * immediate operand (the index of the string
+                 * constant in the string constant pool), we
+                 * want to increment the ip so it points to
+                 * what comes after the opcode, and push the
+                 * /index/ of the string constant on the stack. */
                 push(vm, *++ip);
                 break;
             }
