@@ -7,7 +7,7 @@
 #define venom_debug
 
 void init_vm(VM *vm) {
-    memset(vm, 0, sizeof(*vm));
+    memset(vm, 0, sizeof(VM));
 }
 
 void free_vm(VM* vm) {

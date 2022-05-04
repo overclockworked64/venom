@@ -1,6 +1,8 @@
 #ifndef venom_compiler_h
 #define venom_compiler_h
 
+#define POOL_MAX 256
+
 #include <stdint.h>
 #include "dynarray.h"
 #include "parser.h"
@@ -25,8 +27,8 @@ typedef DynArray(uint8_t) Uint8DynArray;
 typedef struct BytecodeChunk {
     Uint8DynArray code;
     double cp[POOL_MAX];  /* constant pool */
-    uint8_t cp_count;
     char *sp[POOL_MAX];   /* string pool */
+    uint8_t cp_count;
     uint8_t sp_count;
 } BytecodeChunk;
 
