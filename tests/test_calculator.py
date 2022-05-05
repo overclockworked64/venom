@@ -24,8 +24,17 @@ def test_calculator(a, b):
     for op in {'+', '-', '*', '/'}:
         source = f"print {a} {op} {b};"
         expected = "%.2f" % eval(f"{a} {op} {b}")
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
+
 
 
 @pytest.mark.parametrize(
@@ -45,11 +54,29 @@ def test_calculator_grouping(a, b, c):
     for op, op2 in itertools.permutations({'+', '-', '*', '/'}, 2):
         source = f"print ({a} {op} {b}) {op2} {c};"
         expected = "%.2f" % eval(f"({a} {op} {b}) {op2} {c}")
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
+
 
 
 def test_calculator_grouping_nested():
     source = "print (((6 + (4 * 2)) - 4) / 2);"
-    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-    assert "dbg print :: 5.00\n".encode('utf-8') in output
+    process = subprocess.run([
+        "valgrind",
+        "--leak-check=full",
+        "--show-leak-kinds=all",
+        "./a.out"],
+        capture_output=True,
+        input=source.encode('utf-8')
+    )
+    assert "dbg print :: 5.00\n".encode('utf-8') in process.stdout
+    assert process.returncode == 0
+

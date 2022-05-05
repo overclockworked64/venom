@@ -14,12 +14,20 @@ def test_declarations(value):
             let x = {value};
             print x;"""
         ),
-        textwrap.dedent(f"let x = {value}; print x;")
+        f"let x = {value}; print x;"
     ]
     for source in sources:
         expected = '%.2f' % value
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
 
 
 @pytest.mark.parametrize(
@@ -33,8 +41,16 @@ def test_printing_declared_variable(value):
         print x + 1;"""
     )
     expected = '%.2f' % (value + 1)
-    output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-    assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+    process = subprocess.run([
+        "valgrind",
+        "--leak-check=full",
+        "--show-leak-kinds=all",
+        "./a.out"],
+        capture_output=True,
+        input=source.encode('utf-8')
+    )
+    assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+    assert process.returncode == 0
 
 
 @pytest.mark.parametrize(
@@ -55,8 +71,17 @@ def test_printing_declared_variables(x, y):
             print x {op} y + 2;"""
         )
         expected = "%.2f" % eval(f"{x} {op} {y} + 2")
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
+
 
 
 @pytest.mark.parametrize(
@@ -83,8 +108,17 @@ def test_declarations_with_expressions(a, b):
             print x;"""
         )
         expected = "%.2f" % eval(f"{a} {op} {b}")
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
+
 
 
 @pytest.mark.parametrize(
@@ -113,5 +147,14 @@ def test_reuse_declaration(a, b):
             print x;"""
         )
         expected = "%.2f" % eval(f"{a} {op} {b}")
-        output = subprocess.check_output(["./a.out"], input=source.encode('utf-8'))
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in output
+        process = subprocess.run([
+            "valgrind",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "./a.out"],
+            capture_output=True,
+            input=source.encode('utf-8')
+        )
+        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert process.returncode == 0
+
