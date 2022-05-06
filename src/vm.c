@@ -114,19 +114,6 @@ do { \
                 push(vm, -pop(vm));
                 break;
             }
-            case OP_ASSIGN: {
-                /* At this point, ip points to OP_SET_GLOBAL.
-                 * This is a single-byte instruction that expects
-                 * two things to already be on the stack: the index
-                 * of the variable name in the string constant pool,
-                 * and the value of the double constant that the name
-                 * refers to. We pop these two and add the variable
-                 * to the globals table. */
-                double constant = pop(vm);
-                int name_index = pop(vm);
-                table_insert(&vm->globals, chunk->sp[name_index], constant);
-                break;
-            }
             case OP_EXIT: return;
             default:
                 break;
