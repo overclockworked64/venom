@@ -45,6 +45,8 @@ uint8_t add_constant(BytecodeChunk *chunk, double constant) {
             return i;
         }
     }
+    /* otherwise, insert the constant into
+     * the pool and return the index */
     chunk->cp[chunk->cp_count++] = constant;
     return chunk->cp_count - 1;
 }
