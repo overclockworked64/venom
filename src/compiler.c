@@ -114,6 +114,7 @@ static void print_chunk(BytecodeChunk *chunk) {
             case OP_MUL: printf("OP_MUL\n"); break;
             case OP_DIV: printf("OP_DIV\n"); break;
             case OP_NEGATE: printf("OP_NEGATE\n"); break;
+            case OP_ASSIGN: printf("OP_ASSIGN\n"); break;
             default: printf("Unknown instruction.\n"); break;
         }
     }
@@ -132,6 +133,13 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             emit_bytes(chunk, 2, OP_STR_CONST, name_index);
             compile_expression(chunk, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);
+            break;
+        }
+        case STATEMENT_ASSIGN: {
+            uint8_t name_index = add_string(chunk, stmt.name);
+            emit_bytes(chunk, 2, OP_STR_CONST, name_index);
+            compile_expression(chunk, stmt.exp);
+            emit_byte(chunk, OP_ASSIGN);
             break;
         }
         default: assert(0);

@@ -212,11 +212,22 @@ static Statement variable_declaration(Parser *parser, Tokenizer *tokenizer) {
     return stmt;
 }
 
+static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
+    char *identifier = own_string_n(parser->previous.start, parser->previous.length);
+    consume(parser, tokenizer, TOKEN_EQUALS, "Expected '=' after the identifier.");
+    Expression initializer = expression(parser, tokenizer);
+    Statement stmt = { .kind = STATEMENT_ASSIGN, .name = identifier, .exp = initializer };
+    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected ';' at the end of the statement.");
+    return stmt;
+}
+
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
         return print_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LET)) {
         return variable_declaration(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
+        return assign_statement(parser, tokenizer);
     } else {
         assert(0);
     }
