@@ -102,7 +102,7 @@ void compile_expression(BytecodeChunk *chunk, Expression exp) {
 
 #ifdef venom_debug
 static void print_chunk(BytecodeChunk *chunk) {
-    for (uint8_t i = 0; i < chunk->code.count; i++) {
+    for (int i = 0; i < chunk->code.count; i++) {
         switch (chunk->code.data[i]) {
             case OP_CONST: printf("OP_CONST @ %d\n", chunk->code.data[++i]); break;
             case OP_STR_CONST: printf("OP_STR_CONST @ %d\n", chunk->code.data[++i]); break;
