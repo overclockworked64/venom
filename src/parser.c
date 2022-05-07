@@ -12,14 +12,17 @@
 #define venom_debug
 
 void free_stmt(Statement stmt) {
-    if (stmt.kind == STATEMENT_LET) free(stmt.name);
+    if (stmt.kind == STATEMENT_LET || stmt.kind == STATEMENT_ASSIGN) free(stmt.name);
     free_expression(stmt.exp);
 }
 
 void free_expression(Expression e) {
     if (e.kind == LITERAL) return;
     else if (e.kind == VARIABLE) free(e.name);
-    else if (e.kind == UNARY) free_expression(*e.data.exp);
+    else if (e.kind == UNARY) {
+        free_expression(*e.data.exp);
+        free(e.data.exp);
+    }
     else {
         free_expression(e.data.binexp->lhs);
         free_expression(e.data.binexp->rhs);

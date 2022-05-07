@@ -25,6 +25,7 @@ def test_assignment(a, b):
         "valgrind",
         "--leak-check=full",
         "--show-leak-kinds=all",
+        "--error-exitcode=1",
         "./a.out"],
         capture_output=True,
         input=source.encode('utf-8')

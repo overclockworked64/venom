@@ -22,6 +22,7 @@ def test_declarations(value):
             "valgrind",
             "--leak-check=full",
             "--show-leak-kinds=all",
+            "--error-exitcode=1",
             "./a.out"],
             capture_output=True,
             input=source.encode('utf-8')
@@ -45,6 +46,7 @@ def test_printing_declared_variable(value):
         "valgrind",
         "--leak-check=full",
         "--show-leak-kinds=all",
+        "--error-exitcode=1",
         "./a.out"],
         capture_output=True,
         input=source.encode('utf-8')
@@ -75,6 +77,7 @@ def test_printing_declared_variables(x, y):
             "valgrind",
             "--leak-check=full",
             "--show-leak-kinds=all",
+            "--error-exitcode=1",
             "./a.out"],
             capture_output=True,
             input=source.encode('utf-8')
@@ -112,6 +115,7 @@ def test_declarations_with_expressions(a, b):
             "valgrind",
             "--leak-check=full",
             "--show-leak-kinds=all",
+            "--error-exitcode=1",
             "./a.out"],
             capture_output=True,
             input=source.encode('utf-8')
@@ -151,6 +155,7 @@ def test_reuse_declaration(a, b):
             "valgrind",
             "--leak-check=full",
             "--show-leak-kinds=all",
+            "--error-exitcode=1",
             "./a.out"],
             capture_output=True,
             input=source.encode('utf-8')
