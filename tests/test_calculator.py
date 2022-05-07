@@ -32,7 +32,7 @@ def test_calculator(a, b):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
 
@@ -62,7 +62,7 @@ def test_calculator_grouping(a, b, c):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
 

@@ -30,5 +30,5 @@ def test_assignment(a, b):
         input=source.encode('utf-8')
     )
     for value in [a, b]:
-        assert ("dbg print :: %.2f\n" % value).encode('utf-8') in process.stdout
+        assert f"dbg print :: {value:.2f}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0

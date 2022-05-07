@@ -17,7 +17,7 @@ def test_declarations(value):
         f"let x = {value}; print x;"
     ]
     for source in sources:
-        expected = '%.2f' % value
+        expected = f"{value:.2f}"
         process = subprocess.run([
             "valgrind",
             "--leak-check=full",
@@ -26,7 +26,7 @@ def test_declarations(value):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
 
@@ -49,7 +49,7 @@ def test_printing_declared_variable(value):
         capture_output=True,
         input=source.encode('utf-8')
     )
-    assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+    assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
     assert process.returncode == 0
 
 
@@ -79,7 +79,7 @@ def test_printing_declared_variables(x, y):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
 
@@ -116,7 +116,7 @@ def test_declarations_with_expressions(a, b):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
 
@@ -155,6 +155,6 @@ def test_reuse_declaration(a, b):
             capture_output=True,
             input=source.encode('utf-8')
         )
-        assert "dbg print :: {}\n".format(expected).encode('utf-8') in process.stdout
+        assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
 
