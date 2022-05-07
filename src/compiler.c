@@ -101,18 +101,40 @@ void compile_expression(BytecodeChunk *chunk, Expression exp) {
 }
 
 #ifdef venom_debug
-static void print_chunk(BytecodeChunk *chunk) {
-    for (int i = 0; i < chunk->code.count; i++) {
-        switch (chunk->code.data[i]) {
-            case OP_CONST: printf("OP_CONST @ %d\n", chunk->code.data[++i]); break;
-            case OP_STR_CONST: printf("OP_STR_CONST @ %d\n", chunk->code.data[++i]); break;
-            case OP_GET_GLOBAL: printf("OP_GET_GLOBAL @ %d\n", chunk->code.data[++i]); break;
+void disassemble(BytecodeChunk *chunk) {
+    for (
+        uint8_t *ip = chunk->code.data;
+        ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
+        ip++
+    ) {
+        switch (*ip) {
+            case OP_CONST: {
+                int const_index = *++ip;
+                printf("OP_CONST @ ");
+                printf("%d ", chunk->code.data[const_index]);
+                printf("('%.2f')\n", chunk->cp[const_index]);
+                break;
+            }
+            case OP_STR_CONST: {
+                int name_index = *++ip;
+                printf("OP_STR_CONST @ ");
+                printf("%d ", chunk->code.data[name_index]);
+                printf("('%s')\n", chunk->sp[name_index]);
+                break;
+            }
+            case OP_GET_GLOBAL: {
+                int index = *++ip;
+                printf("OP_GET_GLOBAL @ ");
+                printf("%d ", chunk->code.data[index]);
+                printf("('%.2f')\n", chunk->cp[index]);
+                break;
+            }
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
-            case OP_PRINT: printf("OP_PRINT\n"); break;
             case OP_ADD: printf("OP_ADD\n"); break;
             case OP_SUB: printf("OP_SUB\n"); break;
             case OP_MUL: printf("OP_MUL\n"); break;
             case OP_DIV: printf("OP_DIV\n"); break;
+            case OP_PRINT: printf("OP_PRINT\n"); break;
             case OP_NEGATE: printf("OP_NEGATE\n"); break;
             default: printf("Unknown instruction.\n"); break;
         }
@@ -137,7 +159,4 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
         }
         default: assert(0);
     }
-#ifdef venom_debug
-    print_chunk(chunk);
-#endif
 }

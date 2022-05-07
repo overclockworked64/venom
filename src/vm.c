@@ -36,6 +36,10 @@ do { \
     push(vm, a op b); \
 } while (0)
 
+#ifdef venom_debug
+    disassemble(chunk);
+#endif
+
     for (
         uint8_t *ip = chunk->code.data;
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */

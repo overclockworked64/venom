@@ -35,5 +35,6 @@ typedef struct BytecodeChunk {
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
 void compile(BytecodeChunk *chunk, Statement stmt);
+void disassemble(BytecodeChunk *chunk);
 
 #endif
