@@ -22,7 +22,7 @@ void free_chunk(BytecodeChunk *chunk) {
         free(chunk->sp[i]);
 }
 
-uint8_t add_string(BytecodeChunk *chunk, const char *string) {
+static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
     /* check if the string is already present in the pool */
     for (uint8_t i = 0; i < chunk->sp_count; ++i) {
         /* if it is, return the index. */
@@ -37,7 +37,7 @@ uint8_t add_string(BytecodeChunk *chunk, const char *string) {
     return chunk->sp_count - 1;
 }
 
-uint8_t add_constant(BytecodeChunk *chunk, double constant) {
+static uint8_t add_constant(BytecodeChunk *chunk, double constant) {
     /* check if the constant is already present in the pool */
     for (uint8_t i = 0; i < chunk->cp_count; ++i) {
         /* if it is, return the index. */
@@ -51,11 +51,11 @@ uint8_t add_constant(BytecodeChunk *chunk, double constant) {
     return chunk->cp_count - 1;
 }
 
-void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
+static void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
     dynarray_insert(&chunk->code, byte);
 }
 
-void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
+static void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
     va_list ap;
     va_start(ap, n);
     for (int i = 0; i < n; ++i) {
@@ -65,7 +65,7 @@ void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
     va_end(ap);
 }
 
-void compile_expression(BytecodeChunk *chunk, Expression exp) {
+static void compile_expression(BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case LITERAL: {
             uint8_t const_index = add_constant(chunk, exp.data.dval);

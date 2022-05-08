@@ -236,7 +236,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     }
 }
 
-Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
+static Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
     return statement(parser, tokenizer);
 }
 
