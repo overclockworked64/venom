@@ -2,10 +2,14 @@ import textwrap
 import subprocess
 import pytest
 
+from tests.util import VALGRIND_CMD
+from tests.util import SINGLE_OPERAND_GROUP
+from tests.util import TWO_OPERANDS_GROUP
+
 
 @pytest.mark.parametrize(
     "value",
-    [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
+    SINGLE_OPERAND_GROUP,
 )
 def test_declarations(value):
     sources = [
@@ -18,12 +22,8 @@ def test_declarations(value):
     ]
     for source in sources:
         expected = f"{value:.2f}"
-        process = subprocess.run([
-            "valgrind",
-            "--leak-check=full",
-            "--show-leak-kinds=all",
-            "--error-exitcode=1",
-            "./a.out"],
+        process = subprocess.run(
+            VALGRIND_CMD,
             capture_output=True,
             input=source.encode('utf-8')
         )
@@ -33,7 +33,7 @@ def test_declarations(value):
 
 @pytest.mark.parametrize(
     "value",
-    [1, -1, 23, -23, 3.14, -3.14, 0, 100, -100],
+    SINGLE_OPERAND_GROUP,
 )
 def test_printing_declared_variable(value):
     source = textwrap.dedent(
@@ -42,12 +42,8 @@ def test_printing_declared_variable(value):
         print x + 1;"""
     )
     expected = '%.2f' % (value + 1)
-    process = subprocess.run([
-        "valgrind",
-        "--leak-check=full",
-        "--show-leak-kinds=all",
-        "--error-exitcode=1",
-        "./a.out"],
+    process = subprocess.run(
+        VALGRIND_CMD,
         capture_output=True,
         input=source.encode('utf-8')
     )
@@ -57,12 +53,7 @@ def test_printing_declared_variable(value):
 
 @pytest.mark.parametrize(
     "x, y",
-    [
-        [1, -1],
-        [23, -23],
-        [3.14, -3.14],
-        [100, -100],
-    ]
+    TWO_OPERANDS_GROUP,
 )
 def test_printing_declared_variables(x, y):
    for op in {'+', '-', '*', '/'}:
@@ -73,12 +64,8 @@ def test_printing_declared_variables(x, y):
             print x {op} y + 2;"""
         )
         expected = "%.2f" % eval(f"{x} {op} {y} + 2")
-        process = subprocess.run([
-            "valgrind",
-            "--leak-check=full",
-            "--show-leak-kinds=all",
-            "--error-exitcode=1",
-            "./a.out"],
+        process = subprocess.run(
+            VALGRIND_CMD,
             capture_output=True,
             input=source.encode('utf-8')
         )
@@ -89,19 +76,7 @@ def test_printing_declared_variables(x, y):
 
 @pytest.mark.parametrize(
     "a, b",
-    [   # 1-digit operands ops
-        [2, 2],
-        [4, 2],
-        [2, 4],
-        # 2-digit operands ops
-        [3, 10],
-        [10, 3],
-        [10, 10],
-        # negative operands ops
-        [2, -2],
-        [-2, 2],
-        [-2, -2],
-    ]
+    TWO_OPERANDS_GROUP,
 )
 def test_declarations_with_expressions(a, b):
     for op in {'+', '-', '*', '/'}:
@@ -111,12 +86,8 @@ def test_declarations_with_expressions(a, b):
             print x;"""
         )
         expected = "%.2f" % eval(f"{a} {op} {b}")
-        process = subprocess.run([
-            "valgrind",
-            "--leak-check=full",
-            "--show-leak-kinds=all",
-            "--error-exitcode=1",
-            "./a.out"],
+        process = subprocess.run(
+            VALGRIND_CMD,
             capture_output=True,
             input=source.encode('utf-8')
         )
@@ -127,19 +98,7 @@ def test_declarations_with_expressions(a, b):
 
 @pytest.mark.parametrize(
     "a, b",
-    [   # 1-digit operands ops
-        [2, 2],
-        [4, 2],
-        [2, 4],
-        # 2-digit operands ops
-        [3, 10],
-        [10, 3],
-        [10, 10],
-        # negative operands ops
-        [2, -2],
-        [-2, 2],
-        [-2, -2],
-    ]
+    TWO_OPERANDS_GROUP,
 )
 def test_reuse_declaration(a, b):
     for op in {'+', '-', '*', '/'}:
@@ -151,15 +110,10 @@ def test_reuse_declaration(a, b):
             print x;"""
         )
         expected = "%.2f" % eval(f"{a} {op} {b}")
-        process = subprocess.run([
-            "valgrind",
-            "--leak-check=full",
-            "--show-leak-kinds=all",
-            "--error-exitcode=1",
-            "./a.out"],
+        process = subprocess.run(
+            VALGRIND_CMD,
             capture_output=True,
             input=source.encode('utf-8')
         )
         assert f"dbg print :: {expected}\n".encode('utf-8') in process.stdout
         assert process.returncode == 0
-

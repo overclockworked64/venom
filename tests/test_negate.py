@@ -2,9 +2,12 @@ import subprocess
 import pytest
 import textwrap
 
+from tests.util import VALGRIND_CMD
+from tests.util import SINGLE_OPERAND_GROUP
+
 @pytest.mark.parametrize(
     "x",
-    [1, 3, 23, -23, 3.14, -3.14, 0, 100, -100, 5],
+    SINGLE_OPERAND_GROUP,
 )
 def test_assignment(x):
     for i in range(10):
@@ -15,12 +18,7 @@ def test_assignment(x):
             """
         )
         
-        process = subprocess.run([
-            "valgrind",
-            "--leak-check=full",
-            "--show-leak-kinds=all",
-            "--error-exitcode=1",
-            "./a.out"],
+        process = subprocess.run(VALGRIND_CMD,
             capture_output=True,
             input=source.encode('utf-8')
         )

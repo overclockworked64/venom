@@ -126,7 +126,6 @@ void disassemble(BytecodeChunk *chunk) {
                 int index = *++ip;
                 printf("OP_GET_GLOBAL @ ");
                 printf("%d ", chunk->code.data[index]);
-                printf("('%.2f')\n", chunk->cp[index]);
                 break;
             }
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;

@@ -2,15 +2,13 @@ import subprocess
 import pytest
 import textwrap
 
+from tests.util import VALGRIND_CMD
+from tests.util import TWO_OPERANDS_GROUP
+
+
 @pytest.mark.parametrize(
     "a, b",
-    [
-        [1, 3],
-        [23, -23],
-        [3.14, -3.14],
-        [0, 100],
-        [-100, 5],
-    ]
+    TWO_OPERANDS_GROUP,
 )
 def test_assignment(a, b):
     source = textwrap.dedent(
@@ -21,12 +19,8 @@ def test_assignment(a, b):
         print x;"""
     )
     
-    process = subprocess.run([
-        "valgrind",
-        "--leak-check=full",
-        "--show-leak-kinds=all",
-        "--error-exitcode=1",
-        "./a.out"],
+    process = subprocess.run(
+        VALGRIND_CMD,
         capture_output=True,
         input=source.encode('utf-8')
     )
