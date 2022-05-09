@@ -236,7 +236,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     }
 }
 
-static Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
+static Statement parse_stmt(Parser *parser, Tokenizer *tokenizer) {
     return statement(parser, tokenizer);
 }
 
@@ -244,6 +244,6 @@ void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts) {
     parser->had_error = false;
     advance(parser, tokenizer);
     while (parser->current.type != TOKEN_EOF) {
-        dynarray_insert(stmts, parse_statement(parser, tokenizer));
+        dynarray_insert(stmts, parse_stmt(parser, tokenizer));
     }
 }
