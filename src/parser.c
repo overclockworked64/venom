@@ -196,7 +196,7 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     return stmt;
 }
 
-static Statement variable_declaration(Parser *parser, Tokenizer *tokenizer) {
+static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
     Token identifier = consume(parser, tokenizer, TOKEN_IDENTIFIER, "Expected identifier after 'let'.");
     char *name = own_string_n(identifier.start, identifier.length);
   
@@ -228,7 +228,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
         return print_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LET)) {
-        return variable_declaration(parser, tokenizer);
+        return let_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
         return assign_statement(parser, tokenizer);
     } else {
