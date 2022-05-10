@@ -94,6 +94,10 @@ static void compile_expression(BytecodeChunk *chunk, Expression exp) {
                 default: break;
             }
 
+            if (strcmp(exp.operator, "==") == 0) {
+                emit_byte(chunk, OP_EQ);
+            }
+
             break;
         }
         default: assert(0);
@@ -133,6 +137,7 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_SUB: printf("OP_SUB\n"); break;
             case OP_MUL: printf("OP_MUL\n"); break;
             case OP_DIV: printf("OP_DIV\n"); break;
+            case OP_EQ: printf("OP_EQ\n"); break;
             case OP_PRINT: printf("OP_PRINT\n"); break;
             case OP_NEGATE: printf("OP_NEGATE\n"); break;
             default: printf("Unknown instruction.\n"); break;

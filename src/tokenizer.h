@@ -15,6 +15,7 @@ typedef enum {
     TOKEN_DOT,
     TOKEN_SEMICOLON,
     TOKEN_EQUALS,
+    TOKEN_DOUBLE_EQUALS,
     TOKEN_EOF,
     TOKEN_ERROR,
 } TokenType;

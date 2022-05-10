@@ -5,11 +5,11 @@
 #include "table.h"
 #include "util.h"
 
-static void list_insert(Bucket **head, char *key, double item) {
+static void list_insert(Bucket **head, char *key, Object item) {
     /* create a new node */
     Bucket *new_node = malloc(sizeof(Bucket));
     new_node->key = key;
-    new_node->value = item;
+    new_node->obj = item;
     new_node->next = NULL;
 
     /* handle the edge case when the list is empty */
@@ -37,9 +37,9 @@ static void list_free(Bucket *head) {
     }
 }
 
-static double *list_find(Bucket *head, const char *item) {
+static Object *list_find(Bucket *head, const char *item) {
     while (head != NULL) {
-        if (strcmp(head->key, item) == 0) return &head->value;
+        if (strcmp(head->key, item) == 0) return &head->obj;
         head = head->next;
     }
     return NULL;
@@ -55,17 +55,17 @@ static uint32_t hash(const char *key, int length) {
     return hash;
 }
 
-void table_insert(Table *table, const char *key, double value) {
+void table_insert(Table *table, const char *key, Object obj) {
     char *k = own_string(key);
     int index = hash(k, strlen(k)) % 1024;
     if (list_find(table->data[index], k) == NULL) {
-        list_insert(&table->data[index], k, value);
+        list_insert(&table->data[index], k, obj);
     } else {
         /* If the key is already in the list, change its value. */
         Bucket *head = table->data[index];
         while (head != NULL) {
             if (strcmp(head->key, k) == 0) {
-                table->data[index]->value = value;
+                table->data[index]->obj = obj;
             }
             head = head->next;
         }
@@ -73,7 +73,7 @@ void table_insert(Table *table, const char *key, double value) {
     }
 }
 
-double *table_get(const Table *table, const char *key) {
+Object *table_get(const Table *table, const char *key) {
     int index = hash(key, strlen(key)) % 1024;
     return list_find(table->data[index], key);
 }

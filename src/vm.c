@@ -19,11 +19,11 @@ static void runtime_error(const char *variable) {
     fprintf(stderr, "runtime error: Variable '%s' is not defined.\n", variable);
 }
 
-static void push(VM *vm, double value) {
+static void push(VM *vm, Object value) {
     vm->stack[vm->tos++] = value;
 }
 
-static double pop(VM *vm) {
+static Object pop(VM *vm) {
     return vm->stack[--vm->tos];
 }
 
@@ -31,9 +31,9 @@ void run(VM *vm, BytecodeChunk *chunk) {
 #define BINARY_OP(vm, op) \
 do { \
     /* operands are already on the stack */ \
-    double b = pop(vm); \
-    double a = pop(vm); \
-    push(vm, a op b); \
+    Object b = pop(vm); \
+    Object a = pop(vm); \
+    push(vm, AS_NUM(a.value.dval op b.value.dval)); \
 } while (0)
 
 #ifdef venom_debug
@@ -47,12 +47,17 @@ do { \
     ) {
         switch (*ip) {  /* instruction pointer */
             case OP_PRINT: {
-                double value = pop(vm);
+                Object object = pop(vm);
 #ifdef venom_debug
-                printf("dbg print :: %.2f\n", value);
-#else
-                printf("%f\n", value);
+                printf("dbg print :: ");
 #endif
+                print_object(&object);
+                break;
+            }
+            case OP_EQ: {
+                Object b = pop(vm);
+                Object a = pop(vm);
+                push(vm, AS_BOOL(a.value.dval == b.value.dval));
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -66,7 +71,7 @@ do { \
                  * then look up the variable and push its value on
                  * the stack. If we can't find the variable, we bail out. */
                 int name_index = *++ip;
-                double *value = table_get(&vm->globals, chunk->sp[name_index]);
+                Object *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
                     runtime_error(chunk->sp[name_index]);
                     return;
@@ -82,9 +87,9 @@ do { \
                  * and the value of the double constant that the name
                  * refers to. We pop these two and add the variable
                  * to the globals table. */
-                double constant = pop(vm);
-                int name_index = pop(vm);
-                table_insert(&vm->globals, chunk->sp[name_index], constant);
+                Object constant = pop(vm);
+                Object name_index = pop(vm);
+                table_insert(&vm->globals, chunk->sp[(int)name_index.value.dval], constant);
                 break;
             }
             case OP_CONST: {
@@ -96,7 +101,7 @@ do { \
                  * the constant in the constant pool that comes
                  * after the opcode, and push the constant on
                  * the stack. */
-                push(vm, chunk->cp[*++ip]);
+                push(vm, AS_NUM(chunk->cp[*++ip]));
                 break;
             }
             case OP_STR_CONST: {
@@ -107,7 +112,7 @@ do { \
                  * want to increment the ip so it points to
                  * what comes after the opcode, and push the
                  * /index/ of the string constant on the stack. */
-                push(vm, *++ip);
+                push(vm, AS_NUM(*++ip));
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +); break;
@@ -115,7 +120,7 @@ do { \
             case OP_MUL: BINARY_OP(vm, *); break;
             case OP_DIV: BINARY_OP(vm, /); break;
             case OP_NEGATE: { 
-                push(vm, -pop(vm));
+                push(vm, AS_NUM(-pop(vm).value.dval));
                 break;
             }
             case OP_EXIT: return;

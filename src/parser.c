@@ -85,10 +85,11 @@ static Expression primary();
 
 static char *operator(Token token) {
     switch (token.type) {
-        case TOKEN_PLUS:   return "+";
-        case TOKEN_MINUS:  return "-";
-        case TOKEN_STAR:   return "*";
-        case TOKEN_SLASH:  return "/";
+        case TOKEN_PLUS: return "+";
+        case TOKEN_MINUS: return "-";
+        case TOKEN_STAR: return "*";
+        case TOKEN_SLASH: return "/";
+        case TOKEN_DOUBLE_EQUALS: return "==";
         default:
             assert(0);
      }
@@ -138,8 +139,25 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
     return expr;
 }
 
+static Expression equality(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = term(parser, tokenizer);
+    while (match(parser, tokenizer, 1, TOKEN_DOUBLE_EQUALS)) {
+        char *op = operator(parser->previous);
+        Expression right = term(parser, tokenizer);
+        Expression result = { 
+            .kind = BINARY,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .operator = op,
+        };
+        result.data.binexp->lhs = expr;
+        result.data.binexp->rhs = right;
+        expr = result;
+    }
+    return expr;
+}
+
 static Expression expression(Parser *parser, Tokenizer *tokenizer) {
-    return term(parser, tokenizer);
+    return equality(parser, tokenizer);
 }
 
 static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
@@ -236,7 +254,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     }
 }
 
-static Statement parse_stmt(Parser *parser, Tokenizer *tokenizer) {
+static Statement parse_statement(Parser *parser, Tokenizer *tokenizer) {
     return statement(parser, tokenizer);
 }
 
@@ -244,6 +262,6 @@ void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts) {
     parser->had_error = false;
     advance(parser, tokenizer);
     while (parser->current.type != TOKEN_EOF) {
-        dynarray_insert(stmts, parse_stmt(parser, tokenizer));
+        dynarray_insert(stmts, parse_statement(parser, tokenizer));
     }
 }

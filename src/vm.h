@@ -5,10 +5,11 @@
 
 #include "compiler.h"
 #include "dynarray.h"
+#include "object.h"
 #include "table.h"
 
 typedef struct {
-    double stack[STACK_MAX];
+    Object stack[STACK_MAX];
     size_t tos;           /* top of stack */
     Table globals;
 } VM;
