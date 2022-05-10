@@ -16,13 +16,6 @@ do { \
     (array)->data[(array)->count++] = (exp); \
 } while (0)
 
-#define dynarray_init(array) \
-do { \
-    (array)->data = NULL; \
-    (array)->count = 0; \
-    (array)->capacity = 0; \
-} while (0)
-
 #define dynarray_free(array) \
 do { \
     free((array)->data); \

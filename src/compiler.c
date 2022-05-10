@@ -11,9 +11,7 @@
 #define venom_debug
 
 void init_chunk(BytecodeChunk *chunk) {
-    dynarray_init(&chunk->code);
-    chunk->sp_count = 0;
-    chunk->cp_count = 0;
+    memset(chunk, 0, sizeof(BytecodeChunk));
 }
 
 void free_chunk(BytecodeChunk *chunk) {
