@@ -84,15 +84,15 @@ static void compile_expression(BytecodeChunk *chunk, Expression exp) {
             compile_expression(chunk, exp.data.binexp->lhs);
             compile_expression(chunk, exp.data.binexp->rhs);
 
-            switch (*exp.operator) {
-                case '+': emit_byte(chunk, OP_ADD); break;
-                case '-': emit_byte(chunk, OP_SUB); break;
-                case '*': emit_byte(chunk, OP_MUL); break;
-                case '/': emit_byte(chunk, OP_DIV); break;
-                default: break;
-            }
-
-            if (strcmp(exp.operator, "==") == 0) {
+            if (strcmp(exp.operator, "+") == 0) {
+                emit_byte(chunk, OP_ADD);
+            } else if (strcmp(exp.operator, "-") == 0) {
+                emit_byte(chunk, OP_SUB);
+            } else if (strcmp(exp.operator, "*") == 0) {
+                emit_byte(chunk, OP_MUL);
+            } else if (strcmp(exp.operator, "/") == 0) {
+                emit_byte(chunk, OP_DIV);
+            } else if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
