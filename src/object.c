@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "object.h"
 
 void print_object(Object *object) {

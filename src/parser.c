@@ -90,6 +90,7 @@ static char *operator(Token token) {
         case TOKEN_STAR: return "*";
         case TOKEN_SLASH: return "/";
         case TOKEN_DOUBLE_EQUALS: return "==";
+        case TOKEN_BANG_EQUALS: return "!=";
         default:
             assert(0);
      }
@@ -141,7 +142,7 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression equality(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = term(parser, tokenizer);
-    while (match(parser, tokenizer, 1, TOKEN_DOUBLE_EQUALS)) {
+    while (match(parser, tokenizer, 2, TOKEN_DOUBLE_EQUALS, TOKEN_BANG_EQUALS)) {
         char *op = operator(parser->previous);
         Expression right = term(parser, tokenizer);
         Expression result = { 

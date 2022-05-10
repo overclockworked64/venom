@@ -54,12 +54,6 @@ do { \
                 print_object(&object);
                 break;
             }
-            case OP_EQ: {
-                Object b = pop(vm);
-                Object a = pop(vm);
-                push(vm, AS_BOOL(a.value.dval == b.value.dval));
-                break;
-            }
             case OP_GET_GLOBAL: {
                 /* At this point, ip points to OP_GET_GLOBAL.
                  * Since this is a 2-byte instruction with an
@@ -121,6 +115,16 @@ do { \
             case OP_DIV: BINARY_OP(vm, /); break;
             case OP_NEGATE: { 
                 push(vm, AS_NUM(-pop(vm).value.dval));
+                break;
+            }
+            case OP_NOT: {
+                push(vm, AS_BOOL(pop(vm).value.bval ^ 1));
+                break;
+            }
+            case OP_EQ: {
+                Object b = pop(vm);
+                Object a = pop(vm);
+                push(vm, AS_BOOL(a.value.dval == b.value.dval));
                 break;
             }
             case OP_EXIT: return;

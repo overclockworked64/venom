@@ -96,6 +96,8 @@ static void compile_expression(BytecodeChunk *chunk, Expression exp) {
 
             if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
+            } else if (strcmp(exp.operator, "!=") == 0) {
+                emit_bytes(chunk, 2, OP_EQ, OP_NOT);
             }
 
             break;
