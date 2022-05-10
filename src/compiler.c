@@ -129,7 +129,7 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_GET_GLOBAL: {
                 int index = *++ip;
                 printf("OP_GET_GLOBAL @ ");
-                printf("%d ", chunk->code.data[index]);
+                printf("%d\n", chunk->code.data[index]);
                 break;
             }
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
@@ -138,8 +138,9 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_MUL: printf("OP_MUL\n"); break;
             case OP_DIV: printf("OP_DIV\n"); break;
             case OP_EQ: printf("OP_EQ\n"); break;
-            case OP_PRINT: printf("OP_PRINT\n"); break;
+            case OP_NOT: printf("OP_NOT\n"); break;
             case OP_NEGATE: printf("OP_NEGATE\n"); break;
+            case OP_PRINT: printf("OP_PRINT\n"); break;
             default: printf("Unknown instruction.\n"); break;
         }
     }
