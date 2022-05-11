@@ -19,8 +19,8 @@ static void runtime_error(const char *variable) {
     fprintf(stderr, "runtime error: Variable '%s' is not defined.\n", variable);
 }
 
-static void push(VM *vm, Object value) {
-    vm->stack[vm->tos++] = value;
+static void push(VM *vm, Object obj) {
+    vm->stack[vm->tos++] = obj;
 }
 
 static Object pop(VM *vm) {
