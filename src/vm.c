@@ -127,6 +127,18 @@ do { \
                 push(vm, AS_BOOL(a.value.dval == b.value.dval));
                 break;
             }
+            case OP_GT: {
+                Object b = pop(vm);
+                Object a = pop(vm);
+                push(vm, AS_BOOL(a.value.dval > b.value.dval));
+                break;
+            }
+            case OP_LT: {
+                Object b = pop(vm);
+                Object a = pop(vm);
+                push(vm, AS_BOOL(a.value.dval < b.value.dval));
+                break;
+            }
             case OP_EXIT: return;
             default:
                 break;

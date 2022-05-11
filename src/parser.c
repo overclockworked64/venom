@@ -91,6 +91,10 @@ static char *operator(Token token) {
         case TOKEN_SLASH: return "/";
         case TOKEN_DOUBLE_EQUALS: return "==";
         case TOKEN_BANG_EQUALS: return "!=";
+        case TOKEN_GREATER: return ">";
+        case TOKEN_GREATER_EQUAL: return ">=";
+        case TOKEN_LESS: return "<";
+        case TOKEN_LESS_EQUAL: return "<=";
         default:
             assert(0);
      }
@@ -140,11 +144,31 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
     return expr;
 }
 
-static Expression equality(Parser *parser, Tokenizer *tokenizer) {
+static Expression comparison(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = term(parser, tokenizer);
-    while (match(parser, tokenizer, 2, TOKEN_DOUBLE_EQUALS, TOKEN_BANG_EQUALS)) {
+    while (match(parser, tokenizer, 4,
+        TOKEN_GREATER, TOKEN_LESS,
+        TOKEN_GREATER_EQUAL, TOKEN_LESS_EQUAL
+    )) {
         char *op = operator(parser->previous);
         Expression right = term(parser, tokenizer);
+        Expression result = { 
+            .kind = BINARY,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .operator = op,
+        };
+        result.data.binexp->lhs = expr;
+        result.data.binexp->rhs = right;
+        expr = result;
+    }
+    return expr;
+}
+
+static Expression equality(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = comparison(parser, tokenizer);
+    while (match(parser, tokenizer, 2, TOKEN_DOUBLE_EQUALS, TOKEN_BANG_EQUALS)) {
+        char *op = operator(parser->previous);
+        Expression right = comparison(parser, tokenizer);
         Expression result = { 
             .kind = BINARY,
             .data.binexp = malloc(sizeof(BinaryExpression)),

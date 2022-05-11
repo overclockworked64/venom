@@ -92,11 +92,19 @@ static void compile_expression(BytecodeChunk *chunk, Expression exp) {
                 emit_byte(chunk, OP_MUL);
             } else if (strcmp(exp.operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
+            } else if (strcmp(exp.operator, ">") == 0) {
+                emit_byte(chunk, OP_GT);
+            } else if (strcmp(exp.operator, "<") == 0) {
+                emit_byte(chunk, OP_LT);
+            } else if (strcmp(exp.operator, ">=") == 0) {
+                emit_bytes(chunk, 2, OP_LT, OP_NOT);
+            } else if (strcmp(exp.operator, "<=") == 0) {
+                emit_bytes(chunk, 2, OP_GT, OP_NOT);
             } else if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
-            }
+            } 
 
             break;
         }
@@ -138,6 +146,8 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_MUL: printf("OP_MUL\n"); break;
             case OP_DIV: printf("OP_DIV\n"); break;
             case OP_EQ: printf("OP_EQ\n"); break;
+            case OP_GT: printf("OP_GT\n"); break;
+            case OP_LT: printf("OP_LT\n"); break;
             case OP_NOT: printf("OP_NOT\n"); break;
             case OP_NEGATE: printf("OP_NEGATE\n"); break;
             case OP_PRINT: printf("OP_PRINT\n"); break;

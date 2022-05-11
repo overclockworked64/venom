@@ -125,6 +125,18 @@ Token get_token(Tokenizer *tokenizer) {
         case '(': return make_token(tokenizer, TOKEN_LEFT_PAREN, 1);
         case ')': return make_token(tokenizer, TOKEN_RIGHT_PAREN, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
+        case '>': {
+            if (lookahead(tokenizer, 1, "=")) {
+                return make_token(tokenizer, TOKEN_GREATER_EQUAL, 2);
+            }
+            return make_token(tokenizer, TOKEN_GREATER, 1);
+        }
+        case '<': {
+            if (lookahead(tokenizer, 1, "=")) {
+                return make_token(tokenizer, TOKEN_LESS_EQUAL, 2);
+            }
+            return make_token(tokenizer, TOKEN_LESS, 1);
+        }
         case '!': {
             if (lookahead(tokenizer, 1, "=")) {
                 return make_token(tokenizer, TOKEN_BANG_EQUALS, 2);
