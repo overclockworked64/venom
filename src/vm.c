@@ -28,12 +28,12 @@ static Object pop(VM *vm) {
 }
 
 void run(VM *vm, BytecodeChunk *chunk) {
-#define BINARY_OP(vm, op) \
+#define BINARY_OP(vm, op, wrapper) \
 do { \
     /* operands are already on the stack */ \
     Object b = pop(vm); \
     Object a = pop(vm); \
-    push(vm, AS_NUM(a.value.dval op b.value.dval)); \
+    push(vm, wrapper(a.value.dval op b.value.dval)); \
 } while (0)
 
 #ifdef venom_debug
@@ -109,34 +109,19 @@ do { \
                 push(vm, AS_NUM(*++ip));
                 break;
             }
-            case OP_ADD: BINARY_OP(vm, +); break;
-            case OP_SUB: BINARY_OP(vm, -); break;
-            case OP_MUL: BINARY_OP(vm, *); break;
-            case OP_DIV: BINARY_OP(vm, /); break;
+            case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
+            case OP_SUB: BINARY_OP(vm, -, AS_NUM); break;
+            case OP_MUL: BINARY_OP(vm, *, AS_NUM); break;
+            case OP_DIV: BINARY_OP(vm, /, AS_NUM); break;
+            case OP_GT: BINARY_OP(vm, >, AS_BOOL); break;
+            case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
+            case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_NEGATE: { 
                 push(vm, AS_NUM(-pop(vm).value.dval));
                 break;
             }
             case OP_NOT: {
                 push(vm, AS_BOOL(pop(vm).value.bval ^ 1));
-                break;
-            }
-            case OP_EQ: {
-                Object b = pop(vm);
-                Object a = pop(vm);
-                push(vm, AS_BOOL(a.value.dval == b.value.dval));
-                break;
-            }
-            case OP_GT: {
-                Object b = pop(vm);
-                Object a = pop(vm);
-                push(vm, AS_BOOL(a.value.dval > b.value.dval));
-                break;
-            }
-            case OP_LT: {
-                Object b = pop(vm);
-                Object a = pop(vm);
-                push(vm, AS_BOOL(a.value.dval < b.value.dval));
                 break;
             }
             case OP_EXIT: return;
