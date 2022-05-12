@@ -33,7 +33,7 @@ do { \
     /* operands are already on the stack */ \
     Object b = pop(vm); \
     Object a = pop(vm); \
-    push(vm, wrapper(a.value.dval op b.value.dval)); \
+    push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \
 } while (0)
 
 #ifdef venom_debug
@@ -64,7 +64,7 @@ do { \
                  * constant pool that comes after the opcode. We
                  * then look up the variable and push its value on
                  * the stack. If we can't find the variable, we bail out. */
-                int name_index = *++ip;
+                uint8_t name_index = *++ip;
                 Object *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
                     char msg[512];
@@ -85,7 +85,7 @@ do { \
                  * to the globals table. */
                 Object constant = pop(vm);
                 Object name_index = pop(vm);
-                table_insert(&vm->globals, chunk->sp[(int)name_index.value.dval], constant);
+                table_insert(&vm->globals, chunk->sp[(int)NUM_VAL(name_index)], constant);
                 break;
             }
             case OP_CONST: {
@@ -119,11 +119,11 @@ do { \
             case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_NEGATE: { 
-                push(vm, AS_NUM(-pop(vm).value.dval));
+                push(vm, AS_NUM(-NUM_VAL(pop(vm))));
                 break;
             }
             case OP_NOT: {
-                push(vm, AS_BOOL(pop(vm).value.bval ^ 1));
+                push(vm, AS_BOOL(BOOL_VAL(pop(vm)) ^ 1));
                 break;
             }
             case OP_EXIT: return;

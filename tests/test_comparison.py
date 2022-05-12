@@ -10,7 +10,7 @@ from tests.util import TWO_OPERANDS_GROUP
     "x, y",
     TWO_OPERANDS_GROUP,
 )
-def test_equality(x, y):
+def test_comparison(x, y):
     for op in {'>', '<', '>=', '<='}:
         source = textwrap.dedent(
             f"""\
