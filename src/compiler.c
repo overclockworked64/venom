@@ -65,22 +65,22 @@ static void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
 
 static void compile_expression(BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
-        case LITERAL: {
+        case EXP_LITERAL: {
             uint8_t const_index = add_constant(chunk, exp.data.dval);
             emit_bytes(chunk, 2, OP_CONST, const_index);
             break;
         }
-        case VARIABLE: {
+        case EXP_VARIABLE: {
             uint8_t name_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             break;
         }
-        case UNARY: {
+        case EXP_UNARY: {
             compile_expression(chunk, *exp.data.exp);
             emit_byte(chunk, OP_NEGATE);
             break;
         }
-        case BINARY: {
+        case EXP_BINARY: {
             compile_expression(chunk, exp.data.binexp->lhs);
             compile_expression(chunk, exp.data.binexp->rhs);
 

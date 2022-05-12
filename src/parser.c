@@ -12,8 +12,8 @@
 #define venom_debug
 
 void free_stmt(Statement stmt) {
-    if (stmt.kind == STATEMENT_LET || stmt.kind == STATEMENT_ASSIGN) free(stmt.name);
-    if (stmt.kind == STATEMENT_BLOCK) {
+    if (stmt.kind == STMT_LET || stmt.kind == STMT_ASSIGN) free(stmt.name);
+    if (stmt.kind == STMT_BLOCK) {
         for (int i = 0; i < stmt.stmts.count; ++i) {
             free_stmt(stmt.stmts.data[i]);
         }
@@ -23,9 +23,9 @@ void free_stmt(Statement stmt) {
 }
 
 void free_expression(Expression e) {
-    if (e.kind == LITERAL) return;
-    else if (e.kind == VARIABLE) free(e.name);
-    else if (e.kind == UNARY) {
+    if (e.kind == EXP_LITERAL) return;
+    else if (e.kind == EXP_VARIABLE) free(e.name);
+    else if (e.kind == EXP_UNARY) {
         free_expression(*e.data.exp);
         free(e.data.exp);
     }
@@ -76,14 +76,14 @@ static Token consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char 
 
 static Expression number(Parser *parser) {
     Expression expr;
-    expr.kind = LITERAL;
+    expr.kind = EXP_LITERAL;
     expr.data.dval = strtod(parser->previous.start, NULL);
     return expr;
 }
 
 static Expression variable(Parser *parser) {
     char *name = own_string_n(parser->previous.start, parser->previous.length);
-    Expression expr = { .kind = VARIABLE, .name = name };
+    Expression expr = { .kind = EXP_VARIABLE, .name = name };
     return expr;
 }
 
@@ -110,7 +110,7 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_MINUS)) {
         Expression *right = malloc(sizeof(Expression));
         *right = unary(parser, tokenizer);
-        Expression result = { .kind = UNARY, .data.exp = right };
+        Expression result = { .kind = EXP_UNARY, .data.exp = right };
         return result;
     }
     return primary(parser, tokenizer);
@@ -122,7 +122,7 @@ static Expression factor(Parser *parser, Tokenizer *tokenizer) {
         char *op = operator(parser->previous);
         Expression right = unary(parser, tokenizer);
         Expression result = { 
-            .kind = BINARY, 
+            .kind = EXP_BINARY, 
             .data.binexp = malloc(sizeof(BinaryExpression)), 
             .operator = op, 
         };
@@ -139,7 +139,7 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
         char *op = operator(parser->previous);
         Expression right = factor(parser, tokenizer);
         Expression result = { 
-            .kind = BINARY,
+            .kind = EXP_BINARY,
             .data.binexp = malloc(sizeof(BinaryExpression)),
             .operator = op,
         };
@@ -159,7 +159,7 @@ static Expression comparison(Parser *parser, Tokenizer *tokenizer) {
         char *op = operator(parser->previous);
         Expression right = term(parser, tokenizer);
         Expression result = { 
-            .kind = BINARY,
+            .kind = EXP_BINARY,
             .data.binexp = malloc(sizeof(BinaryExpression)),
             .operator = op,
         };
@@ -176,7 +176,7 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
         char *op = operator(parser->previous);
         Expression right = comparison(parser, tokenizer);
         Expression result = { 
-            .kind = BINARY,
+            .kind = EXP_BINARY,
             .data.binexp = malloc(sizeof(BinaryExpression)),
             .operator = op,
         };
@@ -218,20 +218,20 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
 static void print_expression(Expression e) {
     printf("(");
     switch (e.kind) {
-        case LITERAL: {
+        case EXP_LITERAL: {
             printf("%f", e.data.dval);
             break;
         }
-        case VARIABLE: {
+        case EXP_VARIABLE: {
             printf("%s", e.name);
             break;
         }
-        case UNARY: {
+        case EXP_UNARY: {
             printf("-");
             print_expression(*e.data.exp);
             break;
         }
-        case BINARY: {
+        case EXP_BINARY: {
             print_expression(e.data.binexp->lhs);
             printf(" %s ", e.operator);
             print_expression(e.data.binexp->rhs);
@@ -251,7 +251,7 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STATEMENT_PRINT, .exp = exp, .name = NULL };
+    Statement stmt = { .kind = STMT_PRINT, .exp = exp, .name = NULL };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the expression.");
     return stmt;
 }
@@ -270,7 +270,7 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STATEMENT_LET, .name = name, .exp = initializer };
+    Statement stmt = { .kind = STMT_LET, .name = name, .exp = initializer };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the statement.");
     return stmt;
 }
@@ -279,7 +279,7 @@ static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
     char *identifier = own_string_n(parser->previous.start, parser->previous.length);
     consume(parser, tokenizer, TOKEN_EQUALS, "Expected '=' after the identifier.");
     Expression initializer = expression(parser, tokenizer);
-    Statement stmt = { .kind = STATEMENT_ASSIGN, .name = identifier, .exp = initializer };
+    Statement stmt = { .kind = STMT_ASSIGN, .name = identifier, .exp = initializer };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected ';' at the end of the statement.");
     return stmt;
 }
@@ -292,7 +292,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
         return assign_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_BRACE)) {
-        return (Statement){ .kind = STATEMENT_BLOCK, .stmts = block(parser, tokenizer) };
+        return (Statement){ .kind = STMT_BLOCK, .stmts = block(parser, tokenizer) };
     } else {
         assert(0);
     }

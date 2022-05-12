@@ -6,10 +6,10 @@
 #include "tokenizer.h"
 
 typedef enum {
-    LITERAL,
-    VARIABLE,
-    UNARY,
-    BINARY,
+    EXP_LITERAL,
+    EXP_VARIABLE,
+    EXP_UNARY,
+    EXP_BINARY,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;
@@ -31,10 +31,10 @@ typedef struct BinaryExpression {
 } BinaryExpression;
 
 typedef enum {
-    STATEMENT_LET,
-    STATEMENT_ASSIGN,
-    STATEMENT_PRINT,
-    STATEMENT_BLOCK,
+    STMT_LET,
+    STMT_ASSIGN,
+    STMT_PRINT,
+    STMT_BLOCK,
 } StatementKind;
 
 typedef struct Statement Statement;
@@ -43,9 +43,9 @@ typedef DynArray(Statement) Statement_DynArray;
 
 typedef struct Statement {
     StatementKind kind;
-    char *name;
+    char *name; /* used by let & assign */
     Expression exp;
-    Statement_DynArray stmts;
+    Statement_DynArray stmts;  /* used by block */
 } Statement;
 
 typedef struct {
