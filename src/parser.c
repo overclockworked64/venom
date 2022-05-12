@@ -13,6 +13,12 @@
 
 void free_stmt(Statement stmt) {
     if (stmt.kind == STATEMENT_LET || stmt.kind == STATEMENT_ASSIGN) free(stmt.name);
+    if (stmt.kind == STATEMENT_BLOCK) {
+        for (int i = 0; i < stmt.stmts.count; ++i) {
+            free_stmt(stmt.stmts.data[i]);
+        }
+        dynarray_free(&stmt.stmts);
+    }
     free_expression(stmt.exp);
 }
 
@@ -191,6 +197,17 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
     return exp;
 }
 
+static Statement statement(Parser *parser, Tokenizer *tokenizer);
+
+static Statement_DynArray block(Parser *parser, Tokenizer *tokenizer) {
+    Statement_DynArray stmts = {0};
+    while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        dynarray_insert(&stmts, statement(parser, tokenizer));
+    }
+    consume(parser, tokenizer, TOKEN_RIGHT_BRACE, "Expected '}' at the end of the block.");
+    return stmts;
+}
+
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_NUMBER)) return number(parser);
     else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) return variable(parser);
@@ -274,6 +291,8 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return let_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
         return assign_statement(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_LEFT_BRACE)) {
+        return (Statement){ .kind = STATEMENT_BLOCK, .stmts = block(parser, tokenizer) };
     } else {
         assert(0);
     }

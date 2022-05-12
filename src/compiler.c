@@ -172,6 +172,12 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             emit_byte(chunk, OP_SET_GLOBAL);
             break;
         }
+        case STATEMENT_BLOCK: {
+            for (int i = 0; i < stmt.stmts.count; ++i) {
+                compile(chunk, stmt.stmts.data[i]);            
+            }
+            break;
+        }
         default: assert(0);
     }
 }

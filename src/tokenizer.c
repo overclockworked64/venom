@@ -124,6 +124,8 @@ Token get_token(Tokenizer *tokenizer) {
         case '/': return make_token(tokenizer, TOKEN_SLASH, 1);
         case '(': return make_token(tokenizer, TOKEN_LEFT_PAREN, 1);
         case ')': return make_token(tokenizer, TOKEN_RIGHT_PAREN, 1);
+        case '{': return make_token(tokenizer, TOKEN_LEFT_BRACE, 1);
+        case '}': return make_token(tokenizer, TOKEN_RIGHT_BRACE, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
         case '>': {
             if (lookahead(tokenizer, 1, "=")) {
@@ -148,6 +150,18 @@ Token get_token(Tokenizer *tokenizer) {
                 return make_token(tokenizer, TOKEN_DOUBLE_EQUALS, 2);
             }
             return make_token(tokenizer, TOKEN_EQUALS, 1);
+        }
+        case 'e': {
+            if (lookahead(tokenizer, 3, "lse")) {
+                return make_token(tokenizer, TOKEN_ELSE, 4);
+            }
+            return identifier(tokenizer);
+        }
+        case 'i': {
+            if (lookahead(tokenizer, 1, "f")) {
+                return make_token(tokenizer, TOKEN_IF, 2);
+            }
+            return identifier(tokenizer);
         }
         case 'l': {
             if (lookahead(tokenizer, 2, "et")) {

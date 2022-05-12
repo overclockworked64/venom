@@ -34,12 +34,18 @@ typedef enum {
     STATEMENT_LET,
     STATEMENT_ASSIGN,
     STATEMENT_PRINT,
+    STATEMENT_BLOCK,
 } StatementKind;
+
+typedef struct Statement Statement;
+
+typedef DynArray(Statement) Statement_DynArray;
 
 typedef struct Statement {
     StatementKind kind;
     char *name;
     Expression exp;
+    Statement_DynArray stmts;
 } Statement;
 
 typedef struct {
@@ -47,8 +53,6 @@ typedef struct {
     Token previous;
     bool had_error;
 } Parser;
-
-typedef DynArray(Statement) Statement_DynArray;
 
 void parse(Parser *parser, Tokenizer *tokenizer, Statement_DynArray *stmts);
 void free_expression(Expression e);
