@@ -15,8 +15,8 @@ void free_vm(VM* vm) {
     table_free(&vm->globals); 
 }
 
-static void runtime_error(const char *variable) {
-    fprintf(stderr, "runtime error: Variable '%s' is not defined.\n", variable);
+static void runtime_error(const char *message) {
+    fprintf(stderr, "runtime error: %s.\n", message);
 }
 
 static void push(VM *vm, Object obj) {
@@ -67,7 +67,9 @@ do { \
                 int name_index = *++ip;
                 Object *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
-                    runtime_error(chunk->sp[name_index]);
+                    char msg[512];
+                    snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[name_index]);
+                    runtime_error(msg);
                     return;
                 }
                 push(vm, *value);
