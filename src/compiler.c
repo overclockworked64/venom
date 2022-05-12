@@ -159,20 +159,20 @@ void disassemble(BytecodeChunk *chunk) {
 
 void compile(BytecodeChunk *chunk, Statement stmt) {
     switch (stmt.kind) {
-        case STATEMENT_PRINT: {
+        case STMT_PRINT: {
             compile_expression(chunk, stmt.exp);
             emit_byte(chunk, OP_PRINT);
             break;
         }
-        case STATEMENT_LET:
-        case STATEMENT_ASSIGN: {
+        case STMT_LET:
+        case STMT_ASSIGN: {
             uint8_t name_index = add_string(chunk, stmt.name);
             emit_bytes(chunk, 2, OP_STR_CONST, name_index);
             compile_expression(chunk, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);
             break;
         }
-        case STATEMENT_BLOCK: {
+        case STMT_BLOCK: {
             for (int i = 0; i < stmt.stmts.count; ++i) {
                 compile(chunk, stmt.stmts.data[i]);            
             }

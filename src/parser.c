@@ -95,8 +95,8 @@ static char *operator(Token token) {
         case TOKEN_MINUS: return "-";
         case TOKEN_STAR: return "*";
         case TOKEN_SLASH: return "/";
-        case TOKEN_DOUBLE_EQUALS: return "==";
-        case TOKEN_BANG_EQUALS: return "!=";
+        case TOKEN_DOUBLE_EQUAL: return "==";
+        case TOKEN_BANG_EQUAL: return "!=";
         case TOKEN_GREATER: return ">";
         case TOKEN_GREATER_EQUAL: return ">=";
         case TOKEN_LESS: return "<";
@@ -172,7 +172,7 @@ static Expression comparison(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression equality(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = comparison(parser, tokenizer);
-    while (match(parser, tokenizer, 2, TOKEN_DOUBLE_EQUALS, TOKEN_BANG_EQUALS)) {
+    while (match(parser, tokenizer, 2, TOKEN_DOUBLE_EQUAL, TOKEN_BANG_EQUAL)) {
         char *op = operator(parser->previous);
         Expression right = comparison(parser, tokenizer);
         Expression result = { 
@@ -261,7 +261,7 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
     char *name = own_string_n(identifier.start, identifier.length);
   
     Expression initializer;
-    if (match(parser, tokenizer, 1, TOKEN_EQUALS)) {
+    if (match(parser, tokenizer, 1, TOKEN_EQUAL)) {
         initializer = expression(parser, tokenizer);
     }
 
@@ -277,7 +277,7 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
 
 static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
     char *identifier = own_string_n(parser->previous.start, parser->previous.length);
-    consume(parser, tokenizer, TOKEN_EQUALS, "Expected '=' after the identifier.");
+    consume(parser, tokenizer, TOKEN_EQUAL, "Expected '=' after the identifier.");
     Expression initializer = expression(parser, tokenizer);
     Statement stmt = { .kind = STMT_ASSIGN, .name = identifier, .exp = initializer };
     consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected ';' at the end of the statement.");

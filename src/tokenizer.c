@@ -102,8 +102,8 @@ void print_token(Token token) {
         case TOKEN_MINUS: printf("TOKEN_MINUS"); break;
         case TOKEN_DOT: printf("TOKEN_DOT"); break;
         case TOKEN_SEMICOLON: printf("TOKEN_SEMICOLON"); break;
-        case TOKEN_EQUALS: printf("TOKEN_EQUALS"); break;
-        case TOKEN_DOUBLE_EQUALS: printf("TOKEN_DOUBLE_EQUALS"); break;
+        case TOKEN_EQUAL: printf("TOKEN_EQUAL"); break;
+        case TOKEN_DOUBLE_EQUAL: printf("TOKEN_DOUBLE_EQUAL"); break;
         case TOKEN_EOF: printf("TOKEN_EOF"); break;
         case TOKEN_ERROR: printf("TOKEN_ERROR"); break;
         default: break;
@@ -143,15 +143,15 @@ Token get_token(Tokenizer *tokenizer) {
         }
         case '!': {
             if (lookahead(tokenizer, 1, "=")) {
-                return make_token(tokenizer, TOKEN_BANG_EQUALS, 2);
+                return make_token(tokenizer, TOKEN_BANG_EQUAL, 2);
             }
             return make_token(tokenizer, TOKEN_BANG, 1);
         }
         case '=': {
             if (lookahead(tokenizer, 1, "=")) {
-                return make_token(tokenizer, TOKEN_DOUBLE_EQUALS, 2);
+                return make_token(tokenizer, TOKEN_DOUBLE_EQUAL, 2);
             }
-            return make_token(tokenizer, TOKEN_EQUALS, 1);
+            return make_token(tokenizer, TOKEN_EQUAL, 1);
         }
         case 'e': {
             if (lookahead(tokenizer, 3, "lse")) {
