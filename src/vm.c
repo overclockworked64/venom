@@ -36,6 +36,10 @@ do { \
     push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \
 } while (0)
 
+#define READ16() \
+    (ip += 2, \
+    (uint16_t)((ip[-2] << 8) | ip[-1]))
+
 #ifdef venom_debug
     disassemble(chunk);
 #endif
@@ -118,6 +122,20 @@ do { \
             case OP_GT: BINARY_OP(vm, >, AS_BOOL); break;
             case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
+            case OP_JNE: {
+                uint16_t offset = READ16();
+                if (!BOOL_VAL(pop(vm))) {
+                    /* jump over the then branch, after which
+                     * comes the OP_JMP and its 2-byte operand */
+                    ip += offset + 3;
+                }
+                break;
+            }
+            case OP_JMP: {
+                uint16_t offset = READ16();
+                ip += offset;
+                break;
+            }
             case OP_NEGATE: { 
                 push(vm, AS_NUM(-NUM_VAL(pop(vm))));
                 break;

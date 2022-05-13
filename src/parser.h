@@ -35,6 +35,7 @@ typedef enum {
     STMT_ASSIGN,
     STMT_PRINT,
     STMT_BLOCK,
+    STMT_IF,
 } StatementKind;
 
 typedef struct Statement Statement;
@@ -46,6 +47,8 @@ typedef struct Statement {
     char *name; /* used by let & assign */
     Expression exp;
     Statement_DynArray stmts;  /* used by block */
+    Statement *then_branch; /* used by if */
+    Statement *else_branch; /* used by if */
 } Statement;
 
 typedef struct {

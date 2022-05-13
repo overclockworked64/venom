@@ -12,12 +12,20 @@
 #define venom_debug
 
 void free_stmt(Statement stmt) {
-    if (stmt.kind == STMT_LET || stmt.kind == STMT_ASSIGN) free(stmt.name);
+    if (stmt.kind == STMT_LET || stmt.kind == STMT_ASSIGN) {
+        free(stmt.name);
+    }
     if (stmt.kind == STMT_BLOCK) {
         for (int i = 0; i < stmt.stmts.count; ++i) {
             free_stmt(stmt.stmts.data[i]);
         }
         dynarray_free(&stmt.stmts);
+    }
+    if (stmt.kind == STMT_IF) {
+        free_stmt(*stmt.then_branch);
+        free_stmt(*stmt.else_branch);
+        free(stmt.then_branch);
+        free(stmt.else_branch);
     }
     free_expression(stmt.exp);
 }
@@ -75,19 +83,21 @@ static Token consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char 
 }
 
 static Expression number(Parser *parser) {
-    Expression expr;
-    expr.kind = EXP_LITERAL;
-    expr.data.dval = strtod(parser->previous.start, NULL);
-    return expr;
+    return (Expression){
+        .kind = EXP_LITERAL,
+        .data.dval = strtod(parser->previous.start, NULL),
+    };
 }
 
 static Expression variable(Parser *parser) {
-    char *name = own_string_n(parser->previous.start, parser->previous.length);
-    Expression expr = { .kind = EXP_VARIABLE, .name = name };
-    return expr;
+    return (Expression){
+        .kind = EXP_VARIABLE,
+        .name = own_string_n(parser->previous.start, parser->previous.length)
+    };
 }
 
 static Expression primary();
+static Statement statement(Parser *parser, Tokenizer *tokenizer);
 
 static char *operator(Token token) {
     switch (token.type) {
@@ -197,8 +207,6 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
     return exp;
 }
 
-static Statement statement(Parser *parser, Tokenizer *tokenizer);
-
 static Statement_DynArray block(Parser *parser, Tokenizer *tokenizer) {
     Statement_DynArray stmts = {0};
     while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
@@ -284,6 +292,29 @@ static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
     return stmt;
 }
 
+static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
+    consume(parser, tokenizer, TOKEN_LEFT_PAREN, "Expected '(' after if.");
+    Expression condition = expression(parser, tokenizer);
+    consume(parser, tokenizer, TOKEN_RIGHT_PAREN, "Expected ')' after the condition.");
+
+    Statement *then_branch = malloc(sizeof(Statement));
+    Statement *else_branch = NULL;
+
+    *then_branch = statement(parser, tokenizer);
+
+    if (match(parser, tokenizer, 1, TOKEN_ELSE)) {
+        else_branch = malloc(sizeof(Statement));
+        *else_branch = statement(parser, tokenizer);
+    }
+
+    return (Statement){
+        .kind = STMT_IF,
+        .then_branch = then_branch,
+        .else_branch = else_branch,
+        .exp = condition,
+    };
+}
+
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
         return print_statement(parser, tokenizer);
@@ -293,6 +324,8 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return assign_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_BRACE)) {
         return (Statement){ .kind = STMT_BLOCK, .stmts = block(parser, tokenizer) };
+    } else if (match(parser, tokenizer, 1, TOKEN_IF)) {
+        return if_statement(parser, tokenizer);
     } else {
         assert(0);
     }

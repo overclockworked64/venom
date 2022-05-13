@@ -19,6 +19,8 @@ typedef enum {
     OP_LT,
     OP_NOT,
     OP_NEGATE,
+    OP_JMP,
+    OP_JNE,
     OP_CONST,
     OP_STR_CONST,
     OP_SET_GLOBAL,
@@ -38,7 +40,7 @@ typedef struct BytecodeChunk {
 
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-void compile(BytecodeChunk *chunk, Statement stmt);
+int compile(BytecodeChunk *chunk, Statement stmt);
 void disassemble(BytecodeChunk *chunk);
 
 #endif
