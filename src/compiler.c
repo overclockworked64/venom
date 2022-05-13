@@ -121,21 +121,21 @@ void disassemble(BytecodeChunk *chunk) {
     ) {
         switch (*ip) {
             case OP_CONST: {
-                int const_index = *++ip;
+                uint8_t const_index = *++ip;
                 printf("OP_CONST @ ");
                 printf("%d ", chunk->code.data[const_index]);
                 printf("('%.2f')\n", chunk->cp[const_index]);
                 break;
             }
             case OP_STR_CONST: {
-                int name_index = *++ip;
+                uint8_t name_index = *++ip;
                 printf("OP_STR_CONST @ ");
                 printf("%d ", chunk->code.data[name_index]);
                 printf("('%s')\n", chunk->sp[name_index]);
                 break;
             }
             case OP_GET_GLOBAL: {
-                int index = *++ip;
+                uint8_t index = *++ip;
                 printf("OP_GET_GLOBAL @ ");
                 printf("%d\n", chunk->code.data[index]);
                 break;
