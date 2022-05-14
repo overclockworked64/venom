@@ -133,7 +133,7 @@ do { \
             case OP_JNE: {
                 uint16_t offset = READ16();
                 if (!BOOL_VAL(pop(vm))) {
-                    /* Jump over the then branch. after this comes
+                    /* Jump over the then branch. After this comes
                      * OP_JMP with its 2-byte operand, so we make
                      * sure to jump over that, too. */
                     ip += offset + 3;
