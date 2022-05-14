@@ -159,4 +159,5 @@ do { \
         }
     }
 #undef BINARY_OP
+#undef READ16
 }
