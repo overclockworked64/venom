@@ -67,20 +67,25 @@ static int emit_jump(BytecodeChunk *chunk, Opcode jump) {
     emit_byte(chunk, jump);
     emit_bytes(chunk, 2, 0xFF, 0xFF);
     /* In this case, the jump is the last emitted instruction. 
+     *
      * For example, if we have: [
      *     OP_CONST, operand,
      *     OP_CONST, operand,
      *     OP_EQ, 
      *     OP_JNE, operand, operand
      * ]                             ^-- count
-     * the count will be 8. Because the indexing is zero-based, the count points to just
-     * beyond the two operands, so to get to OP_JNE, we need to subtract 3 (two operands
-     * plus one 'extra' slot to adjust for zero-based indexing). */
+     *
+     * the count will be 8. Because the indexing is zero-based,
+     * the count points to just beyond the two operands, so to
+     * get to OP_JNE, we need to subtract 3 (two operands plus
+     * one 'extra' slot to adjust for zero-based indexing). */
     return chunk->code.count - 3;
 }
 
 static void patch_jump(BytecodeChunk *chunk, int jump) {
-    /* For example, if we have: [
+    /* In this case, one or both branches have been compiled.
+     *
+     * For example, if we have: [
      *     OP_CONST, operand,
      *     OP_CONST, operand,
      *     OP_EQ, 
@@ -88,12 +93,14 @@ static void patch_jump(BytecodeChunk *chunk, int jump) {
      *     OP_CONST, operand,
      *     OP_PRINT,
      * ]             ^-- count
-     * We first adjust for zero-based indexing by subtracting 1 (such that
-     * count points to the last element. Then we take the index of OP_JNE
-     * (5 in this case) and add 2 because we need to adjust for the operands. 
-     * The result of subtraction of these two is the number of emitted bytes
-     * after the jump, and we use that number to build a 16-bit offset that
-     * we use to patch the jump. */
+     *
+     * We first adjust for zero-based indexing by subtracting 1
+     * (such that count points to the last element. Then we take
+     * the index of OP_JNE (5 in this case) and add 2 because we
+     * need to adjust for the operands. The result of subtraction
+     * of these two is the number of emitted bytes after the jump,
+     * and we use that number to build a 16-bit offset that we use
+     * to patch the jump. */
     uint16_t bytes_emitted = (chunk->code.count - 1) - (jump + 2);
     chunk->code.data[jump+1] = (bytes_emitted >> 8) & 0xFF;
     chunk->code.data[jump+2] = bytes_emitted & 0xFF;

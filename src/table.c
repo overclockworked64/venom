@@ -6,23 +6,23 @@
 #include "util.h"
 
 static void list_insert(Bucket **head, char *key, Object item) {
-    /* create a new node */
+    /* Create a new node. */
     Bucket *new_node = malloc(sizeof(Bucket));
     new_node->key = key;
     new_node->obj = item;
     new_node->next = NULL;
 
-    /* handle the edge case when the list is empty */
+    /* Handle the edge case when the list is empty. */
     if (*head == NULL) {
         *head = new_node;
     } else {
-        /* go to the end of the list */
+        /* Go to the end of the list. */
         Bucket *current = *head;
         while (current->next != NULL) {
             current = current->next;
         }
     
-        /* store the new node at the end */
+        /* Store the new node at the end. */
         current->next = new_node; 
     }
 }

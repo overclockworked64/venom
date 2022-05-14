@@ -10,7 +10,7 @@
 
 typedef struct {
     Object stack[STACK_MAX];
-    size_t tos;           /* top of stack */
+    size_t tos; /* top of stack */
     Table globals;
 } VM;
 
