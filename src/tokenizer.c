@@ -18,7 +18,7 @@ static char advance(Tokenizer *tokenizer) {
 }
 
 static void skip_whitespace(Tokenizer *tokenizer) {
-    while (true) {
+    for (;;) {
         switch (peek(tokenizer, 0)) {
             case ' ':
             case '\n':
@@ -42,18 +42,20 @@ static bool is_alpha(char c) {
 
 static bool lookahead(Tokenizer *tokenizer, int length, char *rest) {
     if (strncmp(tokenizer->current, rest, length) == 0) {
-        for (int i = 0; i < length; ++i) advance(tokenizer);
+        for (int i = 0; i < length; ++i) {
+            advance(tokenizer);
+        }
         return true;
     }
     return false;
 }
 
 static Token make_token(Tokenizer *tokenizer, TokenType type, int length) {
-    Token token;
-    token.type = type;
-    token.start = tokenizer->current - length;
-    token.length = length;
-    return token;
+    return (Token){
+        .type = type,
+        .start = tokenizer->current - length,
+        .length = length,
+    };
 }
 
 static Token number(Tokenizer *tokenizer) {
