@@ -12,23 +12,29 @@
 #define venom_debug
 
 void free_stmt(Statement stmt) {
-    if (stmt.kind == STMT_LET || stmt.kind == STMT_ASSIGN) {
-        free(stmt.name);
-    }
-
-    if (stmt.kind == STMT_BLOCK) {
-        for (int i = 0; i < stmt.stmts.count; ++i) {
-            free_stmt(stmt.stmts.data[i]);
+    switch (stmt.kind) {
+        case STMT_LET:
+        case STMT_ASSIGN: {
+            free(stmt.name);
+            break;
         }
-        dynarray_free(&stmt.stmts);
-    }
+        case STMT_BLOCK: {
+            for (int i = 0; i < stmt.stmts.count; ++i) {
+                free_stmt(stmt.stmts.data[i]);
+            }
+            dynarray_free(&stmt.stmts);
+            break;
+        }
+        case STMT_IF: {
+            free_stmt(*stmt.then_branch);
+            free(stmt.then_branch);
 
-    if (stmt.kind == STMT_IF) {
-        free_stmt(*stmt.then_branch);
-        free(stmt.then_branch);
-        if (stmt.else_branch != NULL) {
-            free_stmt(*stmt.else_branch);
-            free(stmt.else_branch);
+            if (stmt.else_branch != NULL) {
+                free_stmt(*stmt.else_branch);
+                free(stmt.else_branch);
+            }
+
+            break;
         }
     }
 
@@ -36,16 +42,20 @@ void free_stmt(Statement stmt) {
 }
 
 void free_expression(Expression e) {
-    if (e.kind == EXP_LITERAL) return;
-    else if (e.kind == EXP_VARIABLE) free(e.name);
-    else if (e.kind == EXP_UNARY) {
-        free_expression(*e.data.exp);
-        free(e.data.exp);
-    }
-    else {
-        free_expression(e.data.binexp->lhs);
-        free_expression(e.data.binexp->rhs);
-        free(e.data.binexp);
+    switch (e.kind) {
+        case EXP_LITERAL: return;
+        case EXP_VARIABLE: free(e.name); break;
+        case EXP_UNARY: {
+            free_expression(*e.data.exp);
+            free(e.data.exp);
+            break;
+        }
+        case EXP_BINARY: {
+            free_expression(e.data.binexp->lhs);
+            free_expression(e.data.binexp->rhs);
+            free(e.data.binexp);
+            break;
+        }
     }
 }
 
