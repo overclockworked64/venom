@@ -57,9 +57,11 @@ static void parse_error(Parser *parser, char *message) {
 static Token advance(Parser *parser, Tokenizer *tokenizer) {
     parser->previous = parser->current;
     parser->current = get_token(tokenizer);
+
 #ifdef venom_debug
     print_token(parser->current);
 #endif
+
     return parser->previous;
 }
 
@@ -208,23 +210,38 @@ static Expression expression(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
     Expression exp = expression(parser, tokenizer);
-    consume(parser, tokenizer, TOKEN_RIGHT_PAREN, "Unmatched closing parentheses.");
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_PAREN,
+        "Unmatched closing parentheses."
+    );
     return exp;
 }
 
 static Statement_DynArray block(Parser *parser, Tokenizer *tokenizer) {
     Statement_DynArray stmts = {0};
+
     while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         dynarray_insert(&stmts, statement(parser, tokenizer));
     }
-    consume(parser, tokenizer, TOKEN_RIGHT_BRACE, "Expected '}' at the end of the block.");
+
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_BRACE,
+        "Expected '}' at the end of the block."
+    );
+
     return stmts;
 }
 
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
-    if (match(parser, tokenizer, 1, TOKEN_NUMBER)) return number(parser);
-    else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) return variable(parser);
-    else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) return grouping(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_NUMBER)) {
+        return number(parser);
+    } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
+        return variable(parser);
+    } else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
+        return grouping(parser, tokenizer);
+    }
 }
 
 #ifdef venom_debug
@@ -264,13 +281,26 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STMT_PRINT, .exp = exp, .name = NULL };
-    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the expression.");
-    return stmt;
+    consume(
+        parser, tokenizer,
+        TOKEN_SEMICOLON,
+        "Expected semicolon at the end of the expression."
+    );
+
+    return (Statement){
+        .kind = STMT_PRINT,
+        .exp = exp,
+        .name = NULL
+    };
 }
 
 static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
-    Token identifier = consume(parser, tokenizer, TOKEN_IDENTIFIER, "Expected identifier after 'let'.");
+    Token identifier = consume(
+        parser, tokenizer,
+        TOKEN_IDENTIFIER,
+        "Expected identifier after 'let'."
+    );
+
     char *name = own_string_n(identifier.start, identifier.length);
   
     Expression initializer;
@@ -283,24 +313,57 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
     printf("\n");
 #endif
 
-    Statement stmt = { .kind = STMT_LET, .name = name, .exp = initializer };
-    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected semicolon at the end of the statement.");
-    return stmt;
+    consume(
+        parser, tokenizer,
+        TOKEN_SEMICOLON,
+        "Expected semicolon at the end of the statement."
+    );
+
+    return (Statement){
+        .kind = STMT_LET,
+        .name = name,
+        .exp = initializer
+    };
 }
 
 static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
     char *identifier = own_string_n(parser->previous.start, parser->previous.length);
-    consume(parser, tokenizer, TOKEN_EQUAL, "Expected '=' after the identifier.");
+
+    consume(
+        parser, tokenizer,
+        TOKEN_EQUAL,
+        "Expected '=' after the identifier."
+    );
+
     Expression initializer = expression(parser, tokenizer);
-    Statement stmt = { .kind = STMT_ASSIGN, .name = identifier, .exp = initializer };
-    consume(parser, tokenizer, TOKEN_SEMICOLON, "Expected ';' at the end of the statement.");
-    return stmt;
+
+    consume(
+        parser, tokenizer,
+        TOKEN_SEMICOLON,
+        "Expected ';' at the end of the statement."
+    );
+
+    return (Statement){
+        .kind = STMT_ASSIGN,
+        .name = identifier,
+        .exp = initializer
+    };
 }
 
 static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
-    consume(parser, tokenizer, TOKEN_LEFT_PAREN, "Expected '(' after if.");
+    consume(
+        parser, tokenizer,
+        TOKEN_LEFT_PAREN,
+        "Expected '(' after if."
+    );
+
     Expression condition = expression(parser, tokenizer);
-    consume(parser, tokenizer, TOKEN_RIGHT_PAREN, "Expected ')' after the condition.");
+
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_PAREN,
+        "Expected ')' after the condition."
+    );
 
     Statement *then_branch = malloc(sizeof(Statement));
     Statement *else_branch = NULL;

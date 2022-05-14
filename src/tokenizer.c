@@ -181,7 +181,6 @@ Token get_token(Tokenizer *tokenizer) {
             }
             return identifier(tokenizer);
         }
-        default:
-            return identifier(tokenizer);
+        default: return identifier(tokenizer);
     }
 }

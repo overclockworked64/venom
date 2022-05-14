@@ -237,7 +237,7 @@ int compile(BytecodeChunk *chunk, Statement stmt) {
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JNE. */
-            compile_expression(chunk, stmt.exp); 
+            compile_expression(chunk, stmt.exp);
  
             /* Then, we emit an OP_JNE which jumps to the else clause if the
              * condition is falsey (misleading name? possibly). Because we do
