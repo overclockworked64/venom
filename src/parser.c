@@ -15,18 +15,23 @@ void free_stmt(Statement stmt) {
     if (stmt.kind == STMT_LET || stmt.kind == STMT_ASSIGN) {
         free(stmt.name);
     }
+
     if (stmt.kind == STMT_BLOCK) {
         for (int i = 0; i < stmt.stmts.count; ++i) {
             free_stmt(stmt.stmts.data[i]);
         }
         dynarray_free(&stmt.stmts);
     }
+
     if (stmt.kind == STMT_IF) {
         free_stmt(*stmt.then_branch);
-        free_stmt(*stmt.else_branch);
         free(stmt.then_branch);
-        free(stmt.else_branch);
+        if (stmt.else_branch != NULL) {
+            free_stmt(*stmt.else_branch);
+            free(stmt.else_branch);
+        }
     }
+
     free_expression(stmt.exp);
 }
 

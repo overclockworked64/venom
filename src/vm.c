@@ -38,7 +38,7 @@ do { \
 
 #define READ16() \
     (ip += 2, \
-    (uint16_t)((ip[-2] << 8) | ip[-1]))
+    (uint16_t)((ip[-1] << 8) | ip[0]))
 
 #ifdef venom_debug
     disassemble(chunk);
@@ -123,10 +123,13 @@ do { \
             case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_JNE: {
+                printf("here\n");
                 uint16_t offset = READ16();
+                printf("offset is: %d\n", offset);
                 if (!BOOL_VAL(pop(vm))) {
-                    /* jump over the then branch, after which
-                     * comes the OP_JMP and its 2-byte operand */
+                    /* jump over the then branch. after this
+                     * comes OP_JMP with its 2-byte operand, so
+                     * we make sure to jump over that, too. */
                     ip += offset + 3;
                 }
                 break;

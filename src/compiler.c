@@ -49,9 +49,8 @@ static uint8_t add_constant(BytecodeChunk *chunk, double constant) {
     return chunk->cp_count - 1;
 }
 
-static int emit_byte(BytecodeChunk *chunk, uint8_t byte) {
+static void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
     dynarray_insert(&chunk->code, byte);
-    return chunk->code.count - 1;
 }
 
 static void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
@@ -64,60 +63,83 @@ static void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
     va_end(ap);
 }
 
-static void compile_expression(BytecodeChunk *chunk, Expression exp, int *bytes_emitted) {
+static int emit_jump(BytecodeChunk *chunk, Opcode jump) {
+    emit_byte(chunk, jump);
+    emit_bytes(chunk, 2, 0xFF, 0xFF);
+    /* In this case, the jump is the last emitted instruction. 
+     * For example, if we have: [
+     *     OP_CONST, operand,
+     *     OP_CONST, operand,
+     *     OP_EQ, 
+     *     OP_JNE, operand, operand
+     * ]                             ^-- count
+     * the count will be 8. Because the indexing is zero-based, the count points to just
+     * beyond the two operands, so to get to OP_JNE, we need to subtract 3 (two operands
+     * plus one 'extra' slot to adjust for zero-based indexing). */
+    return chunk->code.count - 3;
+}
+
+static void patch_jump(BytecodeChunk *chunk, int jump) {
+    /* For example, if we have: [
+     *     OP_CONST, operand,
+     *     OP_CONST, operand,
+     *     OP_EQ, 
+     *     OP_JNE, operand, operand,
+     *     OP_CONST, operand,
+     *     OP_PRINT,
+     * ]             ^-- count
+     * We first adjust for zero-based indexing by subtracting 1 (such that
+     * count points to the last element. Then we take the index of OP_JNE
+     * (5 in this case) and add 2 because we need to adjust for the operands. 
+     * The result of subtraction of these two is the number of emitted bytes
+     * after the jump, and we use that number to build a 16-bit offset that
+     * we use to patch the jump. */
+    uint16_t bytes_emitted = (chunk->code.count - 1) - (jump + 2);
+    chunk->code.data[jump+1] = (bytes_emitted >> 8) & 0xFF;
+    chunk->code.data[jump+2] = bytes_emitted & 0xFF;
+}
+
+static void compile_expression(BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case EXP_LITERAL: {
             uint8_t const_index = add_constant(chunk, exp.data.dval);
             emit_bytes(chunk, 2, OP_CONST, const_index);
-            *bytes_emitted += 2;
             break;
         }
         case EXP_VARIABLE: {
             uint8_t name_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
-            *bytes_emitted += 2;
             break;
         }
         case EXP_UNARY: {
-            compile_expression(chunk, *exp.data.exp, bytes_emitted);
+            compile_expression(chunk, *exp.data.exp);
             emit_byte(chunk, OP_NEGATE);
-            *bytes_emitted += 1;
             break;
         }
         case EXP_BINARY: {
-            compile_expression(chunk, exp.data.binexp->lhs, bytes_emitted);
-            compile_expression(chunk, exp.data.binexp->rhs, bytes_emitted);
+            compile_expression(chunk, exp.data.binexp->lhs);
+            compile_expression(chunk, exp.data.binexp->rhs);
 
             if (strcmp(exp.operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, "-") == 0) {
                 emit_byte(chunk, OP_SUB);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, "*") == 0) {
                 emit_byte(chunk, OP_MUL);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, ">") == 0) {
                 emit_byte(chunk, OP_GT);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, "<") == 0) {
                 emit_byte(chunk, OP_LT);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, ">=") == 0) {
                 emit_bytes(chunk, 2, OP_LT, OP_NOT);
-                *bytes_emitted += 2;
             } else if (strcmp(exp.operator, "<=") == 0) {
                 emit_bytes(chunk, 2, OP_GT, OP_NOT);
-                *bytes_emitted += 2;
             } else if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
-                *bytes_emitted += 1;
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
-                *bytes_emitted += 2;
             } 
 
             break;
@@ -181,53 +203,56 @@ void disassemble(BytecodeChunk *chunk) {
 }
 #endif
 
-static void patch_jump(BytecodeChunk *chunk, int jump_addr, int bytes_emitted) {
-    chunk->code.data[jump_addr + 1] = (bytes_emitted >> 8) & 0xFF;
-    chunk->code.data[jump_addr + 2] = bytes_emitted & 0xFF;
-}
 
 int compile(BytecodeChunk *chunk, Statement stmt) {
-    int bytes_emitted = 0;
     switch (stmt.kind) {
         case STMT_PRINT: {
-            compile_expression(chunk, stmt.exp, &bytes_emitted);
+            compile_expression(chunk, stmt.exp);
             emit_byte(chunk, OP_PRINT);
-            bytes_emitted += 1;
             break;
         }
         case STMT_LET:
         case STMT_ASSIGN: {
             uint8_t name_index = add_string(chunk, stmt.name);
             emit_bytes(chunk, 2, OP_STR_CONST, name_index);
-            compile_expression(chunk, stmt.exp, &bytes_emitted);
+            compile_expression(chunk, stmt.exp);
             emit_byte(chunk, OP_SET_GLOBAL);
-            bytes_emitted += 3;
             break;
         }
         case STMT_BLOCK: {
             for (int i = 0; i < stmt.stmts.count; ++i) {
-                bytes_emitted += compile(chunk, stmt.stmts.data[i]);
+                compile(chunk, stmt.stmts.data[i]);
             }
             break;
         }
         case STMT_IF: {
-            compile_expression(chunk, stmt.exp, &bytes_emitted); 
+            /* We first compile the conditional expression because the VM
+            .* expects something like OP_EQ to have already been executed
+             * and a boolean placed on the stack by the time it encounters
+             * an instruction like OP_JNE. */
+            compile_expression(chunk, stmt.exp); 
+ 
+            /* Then, we emit an OP_JNE which jumps to the else clause if the
+             * condition is falsey (misleading name? possibly). Because we do
+             * not know the size of the bytecode in the 'then' branch ahead of
+             * time, we do backpatching: first, we emit 0xFFFF as the relative
+             * jump offset which acts as a placeholder for the real jump offset
+             * that will be known only after we compile the 'then' branch
+             * because at that point the size of the 'then' branch is known. */ 
+            int then_jump = emit_jump(chunk, OP_JNE);
+            compile(chunk, *stmt.then_branch);
+            patch_jump(chunk, then_jump);
 
-            int then_jmp = emit_byte(chunk, OP_JNE);
-            emit_bytes(chunk, 2, 0xFF, 0xFF);
-            int then_emitted = compile(chunk, *stmt.then_branch);
-            patch_jump(chunk, then_jmp, then_emitted);
+            /* Then, we emit OP_JMP, compile the 'else' branch, and patch the jump. */
+            int else_jump = emit_jump(chunk, OP_JMP);
 
             if (stmt.else_branch != NULL) {
-                int else_jmp = emit_byte(chunk, OP_JMP);
-                emit_bytes(chunk, 2, 0xFF, 0xFF);
-                int else_emitted = compile(chunk, *stmt.else_branch);
-                patch_jump(chunk, else_jmp, else_emitted);
+                compile(chunk, *stmt.else_branch);
+                patch_jump(chunk, else_jump);
             }
 
             break;
         }
         default: assert(0);
     }
-    return bytes_emitted;
 }

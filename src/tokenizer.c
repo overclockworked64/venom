@@ -104,6 +104,8 @@ void print_token(Token token) {
         case TOKEN_SEMICOLON: printf("TOKEN_SEMICOLON"); break;
         case TOKEN_EQUAL: printf("TOKEN_EQUAL"); break;
         case TOKEN_DOUBLE_EQUAL: printf("TOKEN_DOUBLE_EQUAL"); break;
+        case TOKEN_IF: printf("TOKEN_IF"); break;
+        case TOKEN_ELSE: printf("TOKEN_ELSE"); break;
         case TOKEN_EOF: printf("TOKEN_EOF"); break;
         case TOKEN_ERROR: printf("TOKEN_ERROR"); break;
         default: break;
