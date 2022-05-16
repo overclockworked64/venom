@@ -211,7 +211,7 @@ void disassemble(BytecodeChunk *chunk) {
 #endif
 
 
-int compile(BytecodeChunk *chunk, Statement stmt) {
+void compile(BytecodeChunk *chunk, Statement stmt) {
     switch (stmt.kind) {
         case STMT_PRINT: {
             compile_expression(chunk, stmt.exp);

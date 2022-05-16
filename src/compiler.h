@@ -40,7 +40,7 @@ typedef struct BytecodeChunk {
 
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-int compile(BytecodeChunk *chunk, Statement stmt);
+void compile(BytecodeChunk *chunk, Statement stmt);
 void disassemble(BytecodeChunk *chunk);
 
 #endif
