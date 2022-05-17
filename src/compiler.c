@@ -250,13 +250,16 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             compile(chunk, *stmt.then_branch);
             patch_jump(chunk, then_jump);
 
-            /* Then, we emit OP_JMP, compile the 'else' branch, and patch the jump. */
+            /* Then, we emit OP_JMP and compile the 'else' branch. */
             int else_jump = emit_jump(chunk, OP_JMP);
 
             if (stmt.else_branch != NULL) {
                 compile(chunk, *stmt.else_branch);
-                patch_jump(chunk, else_jump);
             }
+
+            /* Finally, we patch the 'else' jump. If the 'else' branch
+             + wasn't compiled, the offset should be zeroed out . */
+            patch_jump(chunk, else_jump);
 
             break;
         }

@@ -136,7 +136,7 @@ do { \
                     /* Jump over the then branch. After this comes
                      * OP_JMP with its 2-byte operand, so we make
                      * sure to jump over that, too. */
-                    ip += offset + 3;
+                    ip += offset;
                 }
                 break;
             }
