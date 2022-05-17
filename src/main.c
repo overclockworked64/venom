@@ -74,31 +74,34 @@ void repl() {
     free_vm(&vm);
 }
 
+void run_file(char *file) {
+    char *source = read_file(file);
+
+    Statement_DynArray stmts = {0};
+    Parser parser;
+    Tokenizer tokenizer;
+    init_tokenizer(&tokenizer, source);
+    parse(&parser, &tokenizer, &stmts);
+
+    BytecodeChunk chunk;
+    init_chunk(&chunk);
+    for (int i = 0; i < stmts.count; i++) {
+        compile(&chunk, stmts.data[i]);
+        free_stmt(stmts.data[i]);
+    }
+
+    VM vm;
+    init_vm(&vm);
+    run(&vm, &chunk);
+
+    dynarray_free(&stmts);
+    free_chunk(&chunk);
+    free_vm(&vm);
+    free(source);
+
+}
+
 int main(int argc, char *argv[]) {
     if (argc == 1) repl();
-    else if (argc == 2) {
-        char *source = read_file(argv[1]);
-        Tokenizer tokenizer;
-        init_tokenizer(&tokenizer, source);
-
-        Statement_DynArray stmts = {0};
-        Parser parser;
-        parse(&parser, &tokenizer, &stmts);
-
-        BytecodeChunk chunk;
-        init_chunk(&chunk);
-        for (int i = 0; i < stmts.count; i++) {
-            compile(&chunk, stmts.data[i]);
-            free_stmt(stmts.data[i]);
-        }
-
-        VM vm;
-        init_vm(&vm);
-        run(&vm, &chunk);
-
-        dynarray_free(&stmts);
-        free_chunk(&chunk);
-        free_vm(&vm);
-        free(source);
-    }
+    else if (argc == 2) run_file(argv[1]);
 }
