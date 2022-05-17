@@ -258,7 +258,7 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             }
 
             /* Finally, we patch the 'else' jump. If the 'else' branch
-             + wasn't compiled, the offset should be zeroed out . */
+             + wasn't compiled, the offset should be zeroed out. */
             patch_jump(chunk, else_jump);
 
             break;
