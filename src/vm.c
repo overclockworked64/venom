@@ -133,9 +133,11 @@ do { \
             case OP_JZ: {
                 uint16_t offset = READ16();
                 if (!BOOL_VAL(pop(vm))) {
-                    /* Jump over the then branch. After this comes
-                     * OP_JMP with its 2-byte operand, so we make
-                     * sure to jump over that, too. */
+                    /* Jump over the 'then' branch. After we jump over
+                     * the 'then' branch, we land on OP_JMP, which will
+                     * have '0' as offset if there is no 'else' branch
+                     * coming. Otherwise, it means we didn't take the 
+                     * 'then' branch and we will take the upcoming branch. */
                     ip += offset;
                 }
                 break;
