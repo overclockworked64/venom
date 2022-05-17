@@ -72,12 +72,12 @@ static int emit_jump(BytecodeChunk *chunk, Opcode jump) {
      *     OP_CONST, operand,
      *     OP_CONST, operand,
      *     OP_EQ, 
-     *     OP_JNE, operand, operand
+     *     OP_JZ, operand, operand
      * ]                             ^-- count
      *
      * the count will be 8. Because the indexing is zero-based,
      * the count points to just beyond the two operands, so to
-     * get to OP_JNE, we need to subtract 3 (two operands plus
+     * get to OP_JZ, we need to subtract 3 (two operands plus
      * one 'extra' slot to adjust for zero-based indexing). */
     return chunk->code.count - 3;
 }
@@ -89,14 +89,14 @@ static void patch_jump(BytecodeChunk *chunk, int jump) {
      *     OP_CONST, operand,
      *     OP_CONST, operand,
      *     OP_EQ, 
-     *     OP_JNE, operand, operand,
+     *     OP_JZ, operand, operand,
      *     OP_CONST, operand,
      *     OP_PRINT,
      * ]             ^-- count
      *
      * We first adjust for zero-based indexing by subtracting 1
      * (such that count points to the last element. Then we take
-     * the index of OP_JNE (5 in this case) and add 2 because we
+     * the index of OP_JZ (5 in this case) and add 2 because we
      * need to adjust for the operands. The result of subtraction
      * of these two is the number of emitted bytes after the jump,
      * and we use that number to build a 16-bit offset that we use
@@ -191,8 +191,8 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_EQ: printf("OP_EQ\n"); break;
             case OP_GT: printf("OP_GT\n"); break;
             case OP_LT: printf("OP_LT\n"); break;
-            case OP_JNE: {
-                printf("OP_JNE\n");
+            case OP_JZ: {
+                printf("OP_JZ\n");
                 ip += 2;
                 break;
             }
@@ -236,17 +236,17 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             /* We first compile the conditional expression because the VM
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
-             * an instruction like OP_JNE. */
+             * an instruction like OP_JZ. */
             compile_expression(chunk, stmt.exp);
  
-            /* Then, we emit an OP_JNE which jumps to the else clause if the
-             * condition is falsey (misleading name? possibly). Because we do
-             * not know the size of the bytecode in the 'then' branch ahead of
-             * time, we do backpatching: first, we emit 0xFFFF as the relative
-             * jump offset which acts as a placeholder for the real jump offset
-             * that will be known only after we compile the 'then' branch
-             * because at that point the size of the 'then' branch is known. */ 
-            int then_jump = emit_jump(chunk, OP_JNE);
+            /* Then, we emit an OP_JZ which jumps to the else clause if the
+             * condition is falsey. Because we do not know the size of the
+             * bytecode in the 'then' branch ahead of time, we do backpatching:
+             * first, we emit 0xFFFF as the relative jump offset which acts as
+             * a placeholder for the real jump offset that will be known only
+             * after we compile the 'then' branch because at that point the
+             * size of the 'then' branch is known. */ 
+            int then_jump = emit_jump(chunk, OP_JZ);
             compile(chunk, *stmt.then_branch);
             patch_jump(chunk, then_jump);
 

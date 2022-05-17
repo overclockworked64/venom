@@ -130,7 +130,7 @@ do { \
             case OP_GT: BINARY_OP(vm, >, AS_BOOL); break;
             case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
-            case OP_JNE: {
+            case OP_JZ: {
                 uint16_t offset = READ16();
                 if (!BOOL_VAL(pop(vm))) {
                     /* Jump over the then branch. After this comes

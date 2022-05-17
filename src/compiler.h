@@ -20,7 +20,7 @@ typedef enum {
     OP_NOT,
     OP_NEGATE,
     OP_JMP,
-    OP_JNE,
+    OP_JZ,
     OP_CONST,
     OP_STR_CONST,
     OP_SET_GLOBAL,
