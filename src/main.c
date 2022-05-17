@@ -37,8 +37,8 @@ static char *read_file(const char *path) {
 
 void repl() {
     VM vm;
-
     init_vm(&vm);
+
     for (;;) {
         size_t len = 0;
         char *line = NULL;
@@ -85,6 +85,7 @@ void run_file(char *file) {
 
     BytecodeChunk chunk;
     init_chunk(&chunk);
+
     for (int i = 0; i < stmts.count; i++) {
         compile(&chunk, stmts.data[i]);
         free_stmt(stmts.data[i]);
@@ -98,7 +99,6 @@ void run_file(char *file) {
     free_chunk(&chunk);
     free_vm(&vm);
     free(source);
-
 }
 
 int main(int argc, char *argv[]) {
