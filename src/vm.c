@@ -143,7 +143,7 @@ do { \
                 break;
             }
             case OP_JMP: {
-                uint16_t offset = READ16();
+                int16_t offset = READ16();
                 ip += offset;
                 break;
             }

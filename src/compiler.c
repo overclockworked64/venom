@@ -106,6 +106,40 @@ static void patch_jump(BytecodeChunk *chunk, int jump) {
     chunk->code.data[jump+2] = bytes_emitted & 0xFF;
 }
 
+static void emit_loop(BytecodeChunk *chunk, int loop_start) {
+    /* In this case, the conditional expression has been compiled.
+     *
+     * For example, if we have: [
+     *     OP_STR_CONST @ 14 ('x')
+     *     OP_CONST @ 14 ('0.00')
+     *     OP_SET_GLOBAL
+     *     OP_GET_GLOBAL @ 14
+     *     OP_CONST @ 0 ('10.00')
+     *     OP_LT
+     *     OP_JZ
+     *     OP_GET_GLOBAL @ 14
+     *     OP_PRINT
+     *     OP_STR_CONST @ 14 ('x')
+     *     OP_GET_GLOBAL @ 14
+     *     OP_CONST @ 13 ('1.00')
+     *     OP_ADD
+     *     OP_SET_GLOBAL
+     *     OP_LOOP
+     * ]            ^-- count
+     *
+     * In this case, the loop_start is '5'. If the count points to
+     * one instruction beyond the end of the bytecode '23'), in order
+     * to get to the beginning of the loop, we need to go backwards 18
+     * instructions (chunk->code.count - loop_start = 23 - 5 = 18).
+     * However, we need to make sure we include the 2-byte operand for
+     * OP_LOOP, so we add +2 to the offset.
+     */
+    emit_byte(chunk, OP_JMP);
+    int16_t offset = -(chunk->code.count - loop_start + 2);
+    emit_byte(chunk, (offset >> 8) & 0xFF);
+    emit_byte(chunk, offset & 0xFF);
+}
+
 static void compile_expression(BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case EXP_LITERAL: {
@@ -210,7 +244,6 @@ void disassemble(BytecodeChunk *chunk) {
 }
 #endif
 
-
 void compile(BytecodeChunk *chunk, Statement stmt) {
     switch (stmt.kind) {
         case STMT_PRINT: {
@@ -260,6 +293,35 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             /* Finally, we patch the 'else' jump. If the 'else' branch
              + wasn't compiled, the offset should be zeroed out. */
             patch_jump(chunk, else_jump);
+
+            break;
+        }
+        case STMT_WHILE: {
+            /* We need to mark the beginning of the loop before we compile
+             * the conditional expression, so that we can emit OP_LOOP later. */
+            int loop_start = chunk->code.count;
+
+            /* We then compile the conditional expression because the VM
+            .* expects something like OP_EQ to have already been executed
+             * and a boolean placed on the stack by the time it encounters
+             * an instruction like OP_JZ. */
+            compile_expression(chunk, stmt.exp);
+            
+            /* Then, we emit an OP_JZ which jumps to the else clause if the
+             * condition is falsey. Because we do not know the size of the
+             * bytecode in the 'then' branch ahead of time, we do backpatching:
+             * first, we emit 0xFFFF as the relative jump offset which acts as
+             * a placeholder for the real jump offset that will be known only
+             * after we compile the 'then' branch because at that point the
+             * size of the 'then' branch is known. */ 
+            int exit_jump = emit_jump(chunk, OP_JZ);
+            compile(chunk, *stmt.body);
+
+            /* Then, we emit OP_JMP with a negative offset. */
+            emit_loop(chunk, loop_start);
+
+            /* Finally, we patch the jump. */
+            patch_jump(chunk, exit_jump);
 
             break;
         }

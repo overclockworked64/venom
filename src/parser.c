@@ -36,6 +36,12 @@ void free_stmt(Statement stmt) {
 
             break;
         }
+        case STMT_WHILE: {
+            free_stmt(*stmt.body);
+            free(stmt.body);
+            break;
+        }
+        default: break;
     }
 
     free_expression(stmt.exp);
@@ -393,6 +399,31 @@ static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
     };
 }
 
+static Statement while_statement(Parser *parser, Tokenizer *tokenizer) {
+    consume(
+        parser, tokenizer,
+        TOKEN_LEFT_PAREN,
+        "Expected '(' after while."
+    );
+    
+    Expression condition = expression(parser, tokenizer);
+    
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_PAREN,
+        "Expected ')' after condition."
+    );
+
+    Statement stmt = {
+        .kind = STMT_WHILE,
+        .exp = condition,
+        .body = malloc(sizeof(Statement)),
+    };
+    *stmt.body = statement(parser, tokenizer);
+
+    return stmt;
+ }
+
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
         return print_statement(parser, tokenizer);
@@ -404,6 +435,8 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return (Statement){ .kind = STMT_BLOCK, .stmts = block(parser, tokenizer) };
     } else if (match(parser, tokenizer, 1, TOKEN_IF)) {
         return if_statement(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_WHILE)) {
+        return while_statement(parser, tokenizer);
     } else {
         assert(0);
     }

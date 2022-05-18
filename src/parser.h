@@ -36,6 +36,7 @@ typedef enum {
     STMT_PRINT,
     STMT_BLOCK,
     STMT_IF,
+    STMT_WHILE,
 } StatementKind;
 
 typedef struct Statement Statement;
@@ -49,6 +50,7 @@ typedef struct Statement {
     Statement_DynArray stmts;  /* used by block */
     Statement *then_branch; /* used by if */
     Statement *else_branch; /* used by if */
+    Statement *body; /* used by while */
 } Statement;
 
 typedef struct {
