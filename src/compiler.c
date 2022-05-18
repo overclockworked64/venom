@@ -101,7 +101,7 @@ static void patch_jump(BytecodeChunk *chunk, int jump) {
      * of these two is the number of emitted bytes after the jump,
      * and we use that number to build a 16-bit offset that we use
      * to patch the jump. */
-    uint16_t bytes_emitted = (chunk->code.count - 1) - (jump + 2);
+    int16_t bytes_emitted = (chunk->code.count - 1) - (jump + 2);
     chunk->code.data[jump+1] = (bytes_emitted >> 8) & 0xFF;
     chunk->code.data[jump+2] = bytes_emitted & 0xFF;
 }
@@ -281,10 +281,11 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
             compile(chunk, *stmt.then_branch);
-            patch_jump(chunk, then_jump);
 
-            /* Then, we emit OP_JMP and compile the 'else' branch. */
+            /* Then, we emit OP_JMP, patch the 'then' jump,
+             * and compile the 'else' branch. */
             int else_jump = emit_jump(chunk, OP_JMP);
+            patch_jump(chunk, then_jump);
 
             if (stmt.else_branch != NULL) {
                 compile(chunk, *stmt.else_branch);

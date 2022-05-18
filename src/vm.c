@@ -45,7 +45,7 @@ do { \
      * the loop again so it points to the next instruction \
      * (as opposed to pointing somewhere in the middle). */ \
     (ip += 2, \
-    (uint16_t)((ip[-1] << 8) | ip[0]))
+    (int16_t)((ip[-1] << 8) | ip[0]))
 
 #ifdef venom_debug
     disassemble(chunk);
@@ -131,7 +131,7 @@ do { \
             case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_JZ: {
-                uint16_t offset = READ16();
+                int16_t offset = READ16();
                 if (!BOOL_VAL(pop(vm))) {
                     /* Jump over the 'then' branch. After we jump over
                      * the 'then' branch, we land on OP_JMP, which will
