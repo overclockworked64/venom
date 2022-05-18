@@ -156,8 +156,7 @@ do { \
                 break;
             }
             case OP_EXIT: return;
-            default:
-                break;
+            default: break;
         }
     }
 #undef BINARY_OP
