@@ -124,15 +124,15 @@ static void emit_loop(BytecodeChunk *chunk, int loop_start) {
      *     OP_CONST @ 13 ('1.00')
      *     OP_ADD
      *     OP_SET_GLOBAL
-     *     OP_LOOP
+     *     OP_JMP
      * ]            ^-- count
      *
-     * In this case, the loop_start is '5'. If the count points to
+     * In this case, the loop_start is at '5'. If the count points to
      * one instruction beyond the end of the bytecode '23'), in order
      * to get to the beginning of the loop, we need to go backwards 18
      * instructions (chunk->code.count - loop_start = 23 - 5 = 18).
      * However, we need to make sure we include the 2-byte operand for
-     * OP_LOOP, so we add +2 to the offset.
+     * OP_JMP, so we add +2 to the offset.
      */
     emit_byte(chunk, OP_JMP);
     int16_t offset = -(chunk->code.count - loop_start + 2);
@@ -310,11 +310,11 @@ void compile(BytecodeChunk *chunk, Statement stmt) {
             
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
-             * bytecode in the 'then' branch ahead of time, we do backpatching:
-             * first, we emit 0xFFFF as the relative jump offset which acts as
-             * a placeholder for the real jump offset that will be known only
-             * after we compile the 'then' branch because at that point the
-             * size of the 'then' branch is known. */ 
+             * bytecode in the body of the 'while' loop ahead of time, we do
+             * backpatching: first, we emit 0xFFFF as the relative jump offset
+             * which acts as a placeholder for the real jump offset that will
+             * be known only after we compile the body of the 'while' loop,
+             * because at that point its size is known. */ 
             int exit_jump = emit_jump(chunk, OP_JZ);
             compile(chunk, *stmt.body);
 
