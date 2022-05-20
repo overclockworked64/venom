@@ -36,6 +36,8 @@ do { \
     push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \
 } while (0)
 
+#define READ8() (*++ip)
+
 #define READ16() \
     /* ip points to one of the jump instructions and there \
      * is a 2-byte operand (offset) that comes after the jump \
@@ -76,7 +78,7 @@ do { \
                  * We then look up the variable and push its value
                  * on the stack. If we can't find the variable,
                  * we bail out. */
-                uint8_t name_index = *++ip;
+                uint8_t name_index = READ8();
                 Object *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
                     char msg[512];
@@ -109,7 +111,7 @@ do { \
                  * the constant in the constant pool that comes
                  * after the opcode, and push the constant on
                  * the stack. */
-                push(vm, AS_NUM(chunk->cp[*++ip]));
+                push(vm, AS_NUM(chunk->cp[READ8()]));
                 break;
             }
             case OP_STR_CONST: {
@@ -120,7 +122,7 @@ do { \
                  * want to increment the ip so it points to
                  * what comes after the opcode, and push the
                  * /index/ of the string constant on the stack. */
-                push(vm, AS_NUM(*++ip));
+                push(vm, AS_NUM(READ8()));
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
