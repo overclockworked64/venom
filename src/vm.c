@@ -36,9 +36,9 @@ do { \
     push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \
 } while (0)
 
-#define READ8() (*++ip)
+#define READ_UINT8() (*++ip)
 
-#define READ16() \
+#define READ_INT16() \
     /* ip points to one of the jump instructions and there \
      * is a 2-byte operand (offset) that comes after the jump \
      * instruction. We want to increment the ip so it points \
@@ -78,7 +78,7 @@ do { \
                  * We then look up the variable and push its value
                  * on the stack. If we can't find the variable,
                  * we bail out. */
-                uint8_t name_index = READ8();
+                uint8_t name_index = READ_UINT8();
                 Object *value = table_get(&vm->globals, chunk->sp[name_index]);
                 if (value == NULL) {
                     char msg[512];
@@ -111,7 +111,7 @@ do { \
                  * the constant in the constant pool that comes
                  * after the opcode, and push the constant on
                  * the stack. */
-                push(vm, AS_NUM(chunk->cp[READ8()]));
+                push(vm, AS_NUM(chunk->cp[READ_UINT8()]));
                 break;
             }
             case OP_STR_CONST: {
@@ -122,7 +122,7 @@ do { \
                  * want to increment the ip so it points to
                  * what comes after the opcode, and push the
                  * /index/ of the string constant on the stack. */
-                push(vm, AS_NUM(READ8()));
+                push(vm, AS_NUM(READ_UINT8()));
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
@@ -134,14 +134,14 @@ do { \
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_JZ: {
                 /* Jump if zero. */
-                int16_t offset = READ16();
+                int16_t offset = READ_INT16();
                 if (!BOOL_VAL(pop(vm))) {
                     ip += offset;
                 }
                 break;
             }
             case OP_JMP: {
-                int16_t offset = READ16();
+                int16_t offset = READ_INT16();
                 ip += offset;
                 break;
             }
@@ -158,5 +158,5 @@ do { \
         }
     }
 #undef BINARY_OP
-#undef READ16
+#undef READ_INT16
 }
