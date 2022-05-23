@@ -61,8 +61,8 @@ void repl() {
         
         BytecodeChunk chunk;
         init_chunk(&chunk);
-        for (int i = 0; i < stmts.count; i++) {
-            compile(&chunk, stmts.data[i]);
+        for (size_t i = 0; i < stmts.count; i++) {
+            compile(&chunk, stmts.data[i], false);
             free_stmt(stmts.data[i]);
         }
         run(&vm, &chunk);
@@ -86,8 +86,8 @@ void run_file(char *file) {
     BytecodeChunk chunk;
     init_chunk(&chunk);
 
-    for (int i = 0; i < stmts.count; i++) {
-        compile(&chunk, stmts.data[i]);
+    for (size_t i = 0; i < stmts.count; i++) {
+        compile(&chunk, stmts.data[i], false);
         free_stmt(stmts.data[i]);
     }
 

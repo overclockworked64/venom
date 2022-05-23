@@ -79,7 +79,7 @@ Object *table_get(const Table *table, const char *key) {
 }
 
 void table_free(const Table *table) {
-    for (int i = 0; i < sizeof(table->data) / sizeof(table->data[0]); i++) {
+    for (size_t i = 0; i < sizeof(table->data) / sizeof(table->data[0]); i++) {
         if (table->data[i] != NULL) {
             list_free(table->data[i]);
         }

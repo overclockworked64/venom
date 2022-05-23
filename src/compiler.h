@@ -21,10 +21,14 @@ typedef enum {
     OP_NEGATE,
     OP_JMP,
     OP_JZ,
+    OP_FUNC,
+    OP_INVOKE,
+    OP_RET,
     OP_CONST,
     OP_STR_CONST,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
+    OP_GET_LOCAL,
     OP_EXIT,
 } Opcode;
 
@@ -40,7 +44,7 @@ typedef struct BytecodeChunk {
 
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-void compile(BytecodeChunk *chunk, Statement stmt);
+void compile(BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 
 #endif

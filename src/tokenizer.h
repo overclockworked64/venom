@@ -17,6 +17,7 @@ typedef enum {
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_DOT,
+    TOKEN_COMMA,
     TOKEN_SEMICOLON,
     TOKEN_BANG,
     TOKEN_GREATER,
@@ -29,6 +30,8 @@ typedef enum {
     TOKEN_IF,
     TOKEN_ELSE,
     TOKEN_WHILE,
+    TOKEN_FN,
+    TOKEN_RETURN,
     TOKEN_EOF,
     TOKEN_ERROR,
 } TokenType;

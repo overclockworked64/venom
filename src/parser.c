@@ -19,7 +19,7 @@ void free_stmt(Statement stmt) {
             break;
         }
         case STMT_BLOCK: {
-            for (int i = 0; i < stmt.stmts.count; ++i) {
+            for (size_t i = 0; i < stmt.stmts.count; ++i) {
                 free_stmt(stmt.stmts.data[i]);
             }
             dynarray_free(&stmt.stmts);
@@ -120,6 +120,7 @@ static Expression variable(Parser *parser) {
 }
 
 static Expression primary();
+static Expression expression(Parser *parser, Tokenizer *tokenizer);
 static Statement statement(Parser *parser, Tokenizer *tokenizer);
 
 static char *operator(Token token) {
@@ -139,6 +140,37 @@ static char *operator(Token token) {
      }
 }
 
+static Expression finish_call(Parser *parser, Tokenizer *tokenizer, Expression exp) {
+    Expression_DynArray arguments = {0};
+    if (!check(parser, TOKEN_RIGHT_PAREN)) {
+        do {
+            dynarray_insert(&arguments, expression(parser, tokenizer));
+        } while (match(parser, tokenizer, 1, TOKEN_COMMA));
+    }
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_PAREN,
+        "Expected ')' after expression."
+    );
+    return (Expression){
+        .kind = EXP_CALL,
+        .arguments = arguments,
+        .name = exp.name,
+    };
+}
+
+static Expression call(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = primary(parser, tokenizer);
+    for (;;) {
+        if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
+            expr = finish_call(parser, tokenizer, expr);
+        } else {
+            break;
+        }
+    }
+    return expr;
+}
+
 static Expression unary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_MINUS)) {
         Expression *right = malloc(sizeof(Expression));
@@ -146,7 +178,7 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
         Expression result = { .kind = EXP_UNARY, .data.exp = right };
         return result;
     }
-    return primary(parser, tokenizer);
+    return call(parser, tokenizer);
 }
 
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
@@ -281,6 +313,13 @@ static void print_expression(Expression e) {
             print_expression(e.data.binexp->lhs);
             printf(" %s ", e.operator);
             print_expression(e.data.binexp->rhs);
+            break;
+        }
+        case EXP_CALL: {
+            for (size_t i = 0; i < e.arguments.count; ++i) {
+                print_expression(e.arguments.data[i]);
+            }
+            printf("()");
             break;
         }
         default: assert(0);
@@ -424,6 +463,62 @@ static Statement while_statement(Parser *parser, Tokenizer *tokenizer) {
     return stmt;
  }
 
+static Statement function_statement(Parser *parser, Tokenizer *tokenizer) {
+    Token name = consume(
+        parser, tokenizer,
+        TOKEN_IDENTIFIER,
+        "Expected identifier after 'fn'."
+    );
+    consume(
+        parser, tokenizer,
+        TOKEN_LEFT_PAREN,
+        "Expected '(' after identifier."
+    );
+    String_DynArray parameters = {0};
+    if (!check(parser, TOKEN_RIGHT_PAREN)) {
+        do {
+            Token parameter = consume(
+                parser, tokenizer,
+                TOKEN_IDENTIFIER,
+                "Expected parameter name."
+            );
+            dynarray_insert(
+                &parameters,
+                own_string_n(parameter.start, parameter.length)
+            );
+        } while (match(parser, tokenizer, 1, TOKEN_COMMA));
+    }
+    consume(
+        parser, tokenizer,
+        TOKEN_RIGHT_PAREN,
+        "Expected ')' after the parameter list."
+    );
+    consume(
+        parser, tokenizer,
+        TOKEN_LEFT_BRACE,
+        "Expected '{' after the ')'."
+    );
+    return (Statement){
+        .kind = STMT_FN,
+        .name = own_string_n(name.start, name.length),
+        .body = block(parser, tokenizer).data,
+        .parameters = parameters,
+    };
+}
+
+static Statement return_statement(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = expression(parser, tokenizer);
+    consume(
+        parser, tokenizer,
+        TOKEN_SEMICOLON,
+        "Expected ';' after return."
+    );
+    return (Statement){
+        .kind = STMT_RETURN,
+        .exp = expr,
+    };
+}
+
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_PRINT)) {
         return print_statement(parser, tokenizer);
@@ -437,6 +532,10 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return if_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_WHILE)) {
         return while_statement(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_FN)) {
+        return function_statement(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_RETURN)) {
+        return return_statement(parser, tokenizer);
     } else {
         assert(0);
     }
