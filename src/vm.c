@@ -70,7 +70,6 @@ do { \
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
         ip++
     ) {
-        
         printf("current instruction: ");
         switch (*ip) {
             case OP_PRINT: printf("OP_PRINT"); break;
@@ -104,7 +103,6 @@ do { \
                 printf("dbg print :: ");
 #endif
                 print_object(&object);
-                PRINT_STACK();
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -127,7 +125,6 @@ do { \
                     return;
                 }
                 push(vm, *value);
-                PRINT_STACK();
                 break;
             }
             case OP_SET_GLOBAL: {
@@ -141,7 +138,6 @@ do { \
                 Object constant = pop(vm);
                 Object name_index = pop(vm);
                 table_insert(&vm->globals, chunk->sp[(int)NUM_VAL(name_index)], constant);
-                PRINT_STACK();
                 break;
             }
             case OP_CONST: {
@@ -154,7 +150,6 @@ do { \
                  * after the opcode, and push the constant on
                  * the stack. */
                 push(vm, AS_NUM(chunk->cp[READ_UINT8()]));
-                PRINT_STACK();
                 break;
             }
             case OP_STR_CONST: {
@@ -166,7 +161,6 @@ do { \
                  * what comes after the opcode, and push the
                  * /index/ of the string constant on the stack. */
                 push(vm, AS_NUM(READ_UINT8()));
-                PRINT_STACK();
                 break;
             }
             case OP_GET_LOCAL: {
@@ -178,8 +172,6 @@ do { \
                         break;
                     }
                 }
-
-                PRINT_STACK();
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
@@ -195,37 +187,45 @@ do { \
                 if (!BOOL_VAL(pop(vm))) {
                     ip += offset;
                 }
-                PRINT_STACK();
                 break;
             }
             case OP_JMP: {
                 int16_t offset = READ_INT16(0);
                 ip += offset;
-                PRINT_STACK();
                 break;
             }
             case OP_NEGATE: { 
                 push(vm, AS_NUM(-NUM_VAL(pop(vm))));
-                PRINT_STACK();
                 break;
             }
             case OP_NOT: {
                 push(vm, AS_BOOL(BOOL_VAL(pop(vm)) ^ 1));
-                PRINT_STACK();
                 break;
             }
             case OP_FUNC: {
+                /* At this point, ip points to OP_FUNC. 
+                 * After the opcode, there is the index
+                 * of the function's name in the string
+                 * constant pool, followed by the number
+                 * of function parameters. */
                 uint8_t funcname_index = READ_UINT8();
                 uint8_t paramcount = READ_UINT8();
 
+                /* After that come the parameters, that is,
+                 * their indices in the string constant pool. */
                 for (int i = 0; i < paramcount; ++i) {
                     uint8_t name_index = READ_UINT8();
                     dynarray_insert(&vm->locals, (Object){ .name = chunk->sp[name_index] });
                 }
 
+                /* After the parameters, there are 3 more bytes.
+                 * The first byte is the location of the start of
+                 * the function, and the other two bytes comprise 
+                 * the size of the function in bytes. */
                 uint8_t location = READ_UINT8();
                 int16_t size = READ_INT16(1);
 
+                /* We make the function object... */
                 Function func = {
                     .size = size,
                     .location = location,
@@ -237,52 +237,70 @@ do { \
                     .as.func = func,
                 };
 
+                /* ...and push it on the stack. */ 
                 push(vm, obj);
 
+                /* Finally, since ip now points to the second byte of the
+                 * offset, we modify it so that it points to OP_JMP, because
+                 * we don't want to execute the bytecode that comes now. */
                 ip -= 3;
-
-                PRINT_STACK();
 
                 break;
             }
             case OP_INVOKE: {
+                /* We first read the argcount. */
                 uint8_t argcount = READ_UINT8();
+
+                /* Then, we store the arguments currently
+                 * located on the stack in an array. */
                 Object arguments[256];
                 for (int i = argcount - 1; i >= 0; --i) {
                     arguments[i] = pop(vm);
                 }
 
-                Object obj = pop(vm);
+                /* After we popped the arguments, we expect
+                * to see the function object. W*/
+                Object funcobj = pop(vm);
 
-                print_object(&obj);
-
-                uint8_t location = obj.as.func.location;
-
+                /* We push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
 
+                /* Then, we update vm->locals with the values
+                 * that we are invoking the function with. */
                 for (int i = argcount - 1; i >= 0; --i) {
                     vm->locals.data[i].type = arguments[i].type;
                     vm->locals.data[i].as.dval = arguments[i].as.dval;
                 }
 
-                ip = &chunk->code.data[location-1];
+                /* Finally, we modify ip so that it points to one
+                 * instruction just before the code we're invoking. */
+                ip = &chunk->code.data[funcobj.as.func.location-1];
 
-                PRINT_STACK();
                 break;
-
             }
             case OP_RET: {
+                /* By the time we encounter OP_RET, the return
+                 * value is located on the stack. Beneath it is
+                 * the return address. We need to get the return
+                 * address in order to modify ip and return to the
+                 * called. We need to first pop both of them: */
                 Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
+
+                /* Then, we put the return value back on the stack. */
                 push(vm, returnvalue);
+
+                /* Finally, we modify the instruction pointer. */
                 ip = returnaddr.as.ptr;
 
-                PRINT_STACK();
                 break;
             }
             case OP_EXIT: return;
             default: break;
         }
+#ifdef venom_debug
+        PRINT_STACK();
+#endif
     }
 #undef BINARY_OP
 #undef READ_INT16
