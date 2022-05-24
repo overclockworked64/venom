@@ -16,8 +16,8 @@ typedef struct Object Object;
 
 typedef struct {
     char *name;
-    int16_t size;
     uint8_t location;
+    size_t paramcount;
 } Function;
 
 typedef struct Object {

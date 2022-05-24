@@ -222,36 +222,39 @@ do { \
                  * the function, and the other two bytes comprise 
                  * the size of the function in bytes. */
                 uint8_t location = READ_UINT8();
-                int16_t size = READ_INT16(1);
 
-                // /* We make the function object... */
-                // Function func = {
-                //     .size = size,
-                //     .location = location,
-                //     .name = chunk->sp[funcname_index],
-                // };
+                /* We make the function object... */
+                char *funcname = chunk->sp[funcname_index];
+                Function func = {
+                    .location = location,
+                    .name = funcname,
+                    .paramcount = paramcount,
+                };
  
-                // Object obj = {
-                //     .type = OBJ_FUNCTION,
-                //     .as.func = func,
-                // };
+                Object funcobj = {
+                    .type = OBJ_FUNCTION,
+                    .as.func = func,
+                };
 
-                printf("location of the func to be invoked is: %d\n", location);
-                push(vm, AS_POINTER(&chunk->code.data[location]));
-
-                // /* ...and push it on the stack. */ 
-                // push(vm, obj);
-
-                /* Finally, since ip now points to the second byte of the
-                 * offset, we modify it so that it points to OP_JMP, because
-                 * we don't want to execute the bytecode that comes now. */
-                ip -= 3;
+                table_insert(&vm->globals, funcname, funcobj);
 
                 break;
             }
             case OP_INVOKE: {
-                /* We first read the argcount. */
-                uint8_t argcount = READ_UINT8();
+                /* We first read the index of the function name. */
+                uint8_t funcname = READ_UINT8();
+
+                /* Then, we look it up from the globals table. */ 
+                Object *value = table_get(&vm->globals, chunk->sp[funcname]);
+                if (value == NULL) {
+                    /* Runtime error if the function is not defined. */
+                    char msg[512];
+                    snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[funcname]);
+                    runtime_error(msg);
+                    return;
+                }
+
+                uint8_t argcount = value->as.func.paramcount;
 
                 /* Then, we store the arguments currently
                  * located on the stack in an array. */
@@ -267,21 +270,12 @@ do { \
                     vm->locals.data[i].as.dval = arguments[i].as.dval;
                 }
 
-                /* After we popped the arguments and updated
-                 * vm->locals, we expect to see the location
-                 * (address) of the function we're invoking. */
-                Object obj = pop(vm);
-
-
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
-                printf("pushed return addr: %d\n", *ip);
 
                 /* We modify ip so that it points to one instruction
                  * just before the code we're invoking. */
-                ip = obj.as.ptr - 1;
-                push(vm, obj);
-                printf("about to invoke: %d\n", *ip);
+                ip = &chunk->code.data[value->as.func.location-1];
 
                 break;
             }
