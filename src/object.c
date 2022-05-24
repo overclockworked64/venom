@@ -10,6 +10,6 @@ void print_object(Object *object) {
         printf("<fn %s", object->as.func.name);    
         printf(" @ %d>", object->as.func.location);   
     } else if IS_POINTER(object) {
-        printf("PTR");
+        printf("PTR ('%d')", *object->as.ptr);
     }
 }

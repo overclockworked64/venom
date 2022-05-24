@@ -380,11 +380,11 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
             compile(chunk, *stmt.then_branch, scoped);
-
-            /* Then, we emit OP_JMP, patch the 'then' jump,
-             * and compile the 'else' branch. */
-            int else_jump = emit_jump(chunk, OP_JMP);
+            
+            /* Then, we patch the 'then' jump. */
             patch_jump(chunk, then_jump);
+
+            int else_jump = emit_jump(chunk, OP_JMP);
 
             if (stmt.else_branch != NULL) {
                 compile(chunk, *stmt.else_branch, scoped);
@@ -445,12 +445,15 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
             emit_byte(chunk, (uint8_t)chunk->code.count + 4);
             
             int jump = emit_jump(chunk, OP_JMP);
-            compile(chunk, *stmt.body, true);
+            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+                compile(chunk, stmt.stmts.data[i], true);
+            }
             patch_jump(chunk, jump);
           
             break;
         }
         case STMT_RETURN: {
+            printf("got return\n");
             compile_expression(chunk, stmt.exp, scoped);
             emit_byte(chunk, OP_RET);
             break;

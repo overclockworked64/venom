@@ -501,7 +501,7 @@ static Statement function_statement(Parser *parser, Tokenizer *tokenizer) {
     return (Statement){
         .kind = STMT_FN,
         .name = own_string_n(name.start, name.length),
-        .body = block(parser, tokenizer).data,
+        .stmts = block(parser, tokenizer),
         .parameters = parameters,
     };
 }

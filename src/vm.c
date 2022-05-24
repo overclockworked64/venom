@@ -35,7 +35,6 @@ do { \
     Object b = pop(vm); \
     Object a = pop(vm); \
     push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \
-    PRINT_STACK(); \
 } while (0)
 
 #define READ_UINT8() (*++ip)
@@ -225,20 +224,23 @@ do { \
                 uint8_t location = READ_UINT8();
                 int16_t size = READ_INT16(1);
 
-                /* We make the function object... */
-                Function func = {
-                    .size = size,
-                    .location = location,
-                    .name = chunk->sp[funcname_index],
-                };
+                // /* We make the function object... */
+                // Function func = {
+                //     .size = size,
+                //     .location = location,
+                //     .name = chunk->sp[funcname_index],
+                // };
  
-                Object obj = {
-                    .type = OBJ_FUNCTION,
-                    .as.func = func,
-                };
+                // Object obj = {
+                //     .type = OBJ_FUNCTION,
+                //     .as.func = func,
+                // };
 
-                /* ...and push it on the stack. */ 
-                push(vm, obj);
+                printf("location of the func to be invoked is: %d\n", location);
+                push(vm, AS_POINTER(&chunk->code.data[location]));
+
+                // /* ...and push it on the stack. */ 
+                // push(vm, obj);
 
                 /* Finally, since ip now points to the second byte of the
                  * offset, we modify it so that it points to OP_JMP, because
@@ -258,13 +260,6 @@ do { \
                     arguments[i] = pop(vm);
                 }
 
-                /* After we popped the arguments, we expect
-                * to see the function object. W*/
-                Object funcobj = pop(vm);
-
-                /* We push the return address on the stack. */
-                push(vm, AS_POINTER(ip));
-
                 /* Then, we update vm->locals with the values
                  * that we are invoking the function with. */
                 for (int i = argcount - 1; i >= 0; --i) {
@@ -272,9 +267,21 @@ do { \
                     vm->locals.data[i].as.dval = arguments[i].as.dval;
                 }
 
-                /* Finally, we modify ip so that it points to one
-                 * instruction just before the code we're invoking. */
-                ip = &chunk->code.data[funcobj.as.func.location-1];
+                /* After we popped the arguments and updated
+                 * vm->locals, we expect to see the location
+                 * (address) of the function we're invoking. */
+                Object obj = pop(vm);
+
+
+                /* Then, we push the return address on the stack. */
+                push(vm, AS_POINTER(ip));
+                printf("pushed return addr: %d\n", *ip);
+
+                /* We modify ip so that it points to one instruction
+                 * just before the code we're invoking. */
+                ip = obj.as.ptr - 1;
+                push(vm, obj);
+                printf("about to invoke: %d\n", *ip);
 
                 break;
             }
