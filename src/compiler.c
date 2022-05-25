@@ -10,6 +10,10 @@
 
 #define venom_debug
 
+void init_compiler(Compiler *compiler) {
+    memset(compiler, 0, sizeof(Compiler));
+}
+
 void init_chunk(BytecodeChunk *chunk) {
     memset(chunk, 0, sizeof(BytecodeChunk));
 }
@@ -140,61 +144,179 @@ static void emit_loop(BytecodeChunk *chunk, int loop_start) {
     emit_byte(chunk, offset & 0xFF);
 }
 
-static void compile_expression(BytecodeChunk *chunk, Expression exp, bool scoped) {
+static int var_index(String_DynArray vars, char *name) {
+    for (size_t i = 0; i < vars.count; ++i) {
+        if (strcmp(vars.data[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void compile_expression(
+    Compiler *compiler,
+    BytecodeChunk *chunk,
+    Expression exp,
+    bool scoped
+) {
     switch (exp.kind) {
         case EXP_LITERAL: {
+            compiler->stack_size++;
             uint8_t const_index = add_constant(chunk, exp.data.dval);
             emit_bytes(chunk, 2, OP_CONST, const_index);
             break;
         }
         case EXP_VARIABLE: {
+            compiler->stack_size++;
             uint8_t name_index = add_string(chunk, exp.name);
             if (!scoped) {
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
-                emit_bytes(chunk, 2, OP_GET_LOCAL, name_index);
+                int index = var_index(compiler->locals, exp.name);
+                emit_bytes(chunk, 2, OP_GET_LOCAL, compiler->stack_size + compiler->paramcount - index);
+                printf("compiler->stack_size is: %d\n", compiler->stack_size);
+                printf("index is: %d\n", index);
+                printf("compiler->paramcount is: %d\n", compiler->paramcount);
             }
             break;
         }
         case EXP_UNARY: {
-            compile_expression(chunk, *exp.data.exp, scoped);
+            compile_expression(compiler, chunk, *exp.data.exp, scoped);
             emit_byte(chunk, OP_NEGATE);
             break;
         }
         case EXP_BINARY: {
-            compile_expression(chunk, exp.data.binexp->lhs, scoped);
-            compile_expression(chunk, exp.data.binexp->rhs, scoped);
+            compile_expression(compiler, chunk, exp.data.binexp->lhs, scoped);
+            compile_expression(compiler, chunk, exp.data.binexp->rhs, scoped);
 
             if (strcmp(exp.operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "-") == 0) {
                 emit_byte(chunk, OP_SUB);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "*") == 0) {
                 emit_byte(chunk, OP_MUL);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, ">") == 0) {
                 emit_byte(chunk, OP_GT);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "<") == 0) {
                 emit_byte(chunk, OP_LT);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, ">=") == 0) {
                 emit_bytes(chunk, 2, OP_LT, OP_NOT);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "<=") == 0) {
                 emit_bytes(chunk, 2, OP_GT, OP_NOT);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
+                compiler->stack_size--;
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
-            } 
+                compiler->stack_size--;
+            }
 
             break;
         }
         case EXP_CALL: {
             for (size_t i = 0; i < exp.arguments.count; ++i) {
-                compile_expression(chunk, exp.arguments.data[i], scoped);
+                compile_expression(compiler, chunk, exp.arguments.data[i], scoped);
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 2, OP_INVOKE, funcname_index);
+            compiler->stack_size++;
+            emit_bytes(chunk, 2, OP_SET_LOCAL, compiler->paramcount);
+            compiler->stack_size--;
+            for (size_t i = 0; i < compiler->paramcount - 1; ++i) {
+                emit_byte(chunk, OP_POP);
+                compiler->stack_size--;
+            }
+
+            break;
+        }
+        default: assert(0);
+    }
+}
+
+static void compile_expression_noemit(Compiler *compiler, BytecodeChunk *chunk, Expression exp, bool scoped) {
+    switch (exp.kind) {
+        case EXP_LITERAL: {
+            break;
+        }
+        case EXP_VARIABLE: {
+            dynarray_insert(&compiler->locals, exp.name);
+            break;
+        }
+        case EXP_UNARY: {
+            compile_expression_noemit(compiler, chunk, *exp.data.exp, scoped);
+            break;
+        }
+        case EXP_BINARY: {
+            compile_expression_noemit(compiler, chunk, exp.data.binexp->lhs, scoped);
+            compile_expression_noemit(compiler, chunk, exp.data.binexp->rhs, scoped);
+            break;
+        }
+        case EXP_CALL: {
+            for (size_t i = 0; i < exp.arguments.count; ++i) {
+                compile_expression_noemit(compiler, chunk, exp.arguments.data[i], scoped);
+            }
+            break;
+        }
+        default: assert(0);
+    }
+}
+
+void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
+    switch (stmt.kind) {
+        case STMT_PRINT: {
+            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
+            break;
+        }
+        case STMT_LET:
+        case STMT_ASSIGN: {
+            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
+            if (!scoped) {
+            } else {
+                dynarray_insert(&compiler->locals, stmt.name);
+                int index = var_index(compiler->locals, stmt.name);
+            }
+            break;
+        }
+        case STMT_BLOCK: {
+            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+                first_pass(compiler, chunk, stmt.stmts.data[i], scoped);
+            }
+            break;
+        }
+        case STMT_IF: {
+            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
+
+            first_pass(compiler, chunk, *stmt.then_branch, scoped);
+
+            if (stmt.else_branch != NULL) {
+                first_pass(compiler, chunk, *stmt.else_branch, scoped);
+            }
+
+            break;
+        }
+        case STMT_WHILE: {    
+            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
+            first_pass(compiler, chunk, *stmt.body, scoped);
+            break;
+        }
+        case STMT_FN: {
+            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+                first_pass(compiler, chunk, stmt.stmts.data[i], true);
+            }
+            break;
+        }
+        case STMT_RETURN: { 
+            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
             break;
         }
         default: assert(0);
@@ -235,6 +357,13 @@ void disassemble(BytecodeChunk *chunk) {
                 uint8_t name_index = *++ip;
                 printf("%d: ", i);
                 printf("OP_GET_LOCAL, byte (%d): ('%s')\n", name_index, chunk->sp[name_index]);
+                ++i;
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t index = *++ip;
+                printf("%d: ", i);
+                printf("OP_GET_LOCAL, byte (%d)\n", index);
                 ++i;
                 break;
             }
@@ -305,11 +434,12 @@ void disassemble(BytecodeChunk *chunk) {
                 printf(", byte (paramcount: '%d')", paramcount);
                 for (; i < paramcount; ++i) {
                     uint8_t paramname_index = *++ip;
+                    ++i;
                     printf(", byte (param: '%d' (%s)')", paramname_index, chunk->sp[paramname_index]);
                 }
                 uint8_t location = *++ip;
                 printf(", byte (location: '%d')\n", location);
-                i += 3;
+                i++;
                 break;
             }
             case OP_INVOKE: {
@@ -339,30 +469,45 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_PRINT\n"); 
                 break;
             }
+            case OP_POP: {
+                printf("%d: ", i);
+                printf("OP_POP\n");
+                break;
+            }
             default: printf("Unknown instruction.\n"); break;
         }
     }
 }
 #endif
 
-void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
+void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
     switch (stmt.kind) {
         case STMT_PRINT: {
-            compile_expression(chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp, scoped);
             emit_byte(chunk, OP_PRINT);
+            compiler->stack_size--;
             break;
         }
         case STMT_LET:
         case STMT_ASSIGN: {
-            uint8_t name_index = add_string(chunk, stmt.name);
-            emit_bytes(chunk, 2, OP_STR_CONST, name_index);
-            compile_expression(chunk, stmt.exp, scoped);
-            emit_byte(chunk, OP_SET_GLOBAL);
+            compile_expression(compiler, chunk, stmt.exp, scoped);
+            if (!scoped) {
+                compiler->stack_size -= 2;
+                emit_byte(chunk, OP_SET_GLOBAL);
+            } else {
+                compiler->stack_size--;
+                int index = var_index(compiler->locals, stmt.name);
+                emit_bytes(
+                    chunk, 2,
+                    OP_SET_LOCAL,
+                    compiler->stack_size + compiler->paramcount - index + 1
+                );
+            }
             break;
         }
         case STMT_BLOCK: {
             for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                compile(chunk, stmt.stmts.data[i], scoped);
+                compile(compiler, chunk, stmt.stmts.data[i], scoped);
             }
             break;
         }
@@ -371,7 +516,7 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp, scoped);
  
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -381,24 +526,25 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
              * after we compile the 'then' branch because at that point the
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
-            compile(chunk, *stmt.then_branch, scoped);
-            
-            /* Then, we patch the 'then' jump. */
-            patch_jump(chunk, then_jump);
+            compiler->stack_size--;
+            compile(compiler, chunk, *stmt.then_branch, scoped);
 
             int else_jump = emit_jump(chunk, OP_JMP);
 
+            /* Then, we patch the 'then' jump. */
+            patch_jump(chunk, then_jump);
+
             if (stmt.else_branch != NULL) {
-                compile(chunk, *stmt.else_branch, scoped);
+                compile(compiler, chunk, *stmt.else_branch, scoped);
             }
 
             /* Finally, we patch the 'else' jump. If the 'else' branch
-             + wasn't compiled, the offset should be zeroed out. */
+            + wasn't compiled, the offset should be zeroed out. */
             patch_jump(chunk, else_jump);
 
             break;
         }
-        case STMT_WHILE: {
+        case STMT_WHILE: {    
             /* We need to mark the beginning of the loop before we compile
              * the conditional expression, so that we can emit OP_LOOP later. */
             int loop_start = chunk->code.count;
@@ -407,7 +553,7 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp, scoped);
             
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -417,7 +563,8 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
              * be known only after we compile the body of the 'while' loop,
              * because at that point its size is known. */ 
             int exit_jump = emit_jump(chunk, OP_JZ);
-            compile(chunk, *stmt.body, scoped);
+            compiler->stack_size--;
+            compile(compiler, chunk, *stmt.body, scoped);
 
             /* Then, we emit OP_JMP with a negative offset. */
             emit_loop(chunk, loop_start);
@@ -447,17 +594,21 @@ void compile(BytecodeChunk *chunk, Statement stmt, bool scoped) {
             emit_byte(chunk, (uint8_t)chunk->code.count + 4);
             
             int jump = emit_jump(chunk, OP_JMP);
+
+            compiler->paramcount = stmt.parameters.count;
+
             for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                compile(chunk, stmt.stmts.data[i], true);
+                compile(compiler, chunk, stmt.stmts.data[i], true);
             }
+
             patch_jump(chunk, jump);
-          
+
             break;
         }
-        case STMT_RETURN: {
-            printf("got return\n");
-            compile_expression(chunk, stmt.exp, scoped);
+        case STMT_RETURN: { 
+            compile_expression(compiler, chunk, stmt.exp, scoped);
             emit_byte(chunk, OP_RET);
+            compiler->stack_size--;
             break;
         }
         default: assert(0);

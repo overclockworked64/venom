@@ -28,7 +28,7 @@ static Object pop(VM *vm) {
     return vm->stack[--vm->tos];
 }
 
-void run(VM *vm, BytecodeChunk *chunk) {
+void run(VM *vm, Compiler *compiler, BytecodeChunk *chunk) {
 #define BINARY_OP(vm, op, wrapper) \
 do { \
     /* operands are already on the stack */ \
@@ -60,6 +60,9 @@ do { \
     printf("]\n"); \
 } while(0)
 
+#define REVERSE_LOOKUP(n) \
+    (vm->stack[vm->tos - n])
+
 #ifdef venom_debug
     disassemble(chunk);
 #endif
@@ -90,7 +93,15 @@ do { \
             case OP_STR_CONST: printf("OP_STR_CONST"); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
-            case OP_GET_LOCAL: printf("OP_GET_LOCAL"); break;
+            case OP_SET_LOCAL: {
+                printf("OP_SET_LOCAL: %d", ip[1]);
+                break;
+            }
+            case OP_GET_LOCAL: {
+                printf("OP_GET_LOCAL: %d", ip[1]);
+                break;
+            }
+            case OP_POP: printf("OP_POP"); break;
             case OP_EXIT: printf("OP_EXIT"); break;
         }
         printf("\n");
@@ -162,15 +173,18 @@ do { \
                 push(vm, AS_NUM(READ_UINT8()));
                 break;
             }
+            case OP_SET_LOCAL: {
+                uint8_t index = READ_UINT8();
+                Object obj = pop(vm);
+                REVERSE_LOOKUP(index) = obj;
+                break;
+            }
             case OP_GET_LOCAL: {
-                uint8_t name_index = READ_UINT8();
-                char *name = chunk->sp[name_index];
-                for (size_t i = 0; i < vm->locals.count; ++i) {
-                    if (strcmp(vm->locals.data[i].name, name) == 0) {
-                        push(vm, vm->locals.data[i]);
-                        break;
-                    }
-                }
+                printf("tos before pushing is: %ld\n", vm->tos);
+                uint8_t index = READ_UINT8();
+                printf("helloooooooooooooooooooooooooooooooooooooo: %d\n", index);
+                Object obj = REVERSE_LOOKUP(index);
+                push(vm, obj);
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
@@ -256,20 +270,6 @@ do { \
 
                 uint8_t argcount = value->as.func.paramcount;
 
-                /* Then, we store the arguments currently
-                 * located on the stack in an array. */
-                Object arguments[256];
-                for (int i = argcount - 1; i >= 0; --i) {
-                    arguments[i] = pop(vm);
-                }
-
-                /* Then, we update vm->locals with the values
-                 * that we are invoking the function with. */
-                for (int i = argcount - 1; i >= 0; --i) {
-                    vm->locals.data[i].type = arguments[i].type;
-                    vm->locals.data[i].as.dval = arguments[i].as.dval;
-                }
-
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
 
@@ -296,6 +296,7 @@ do { \
 
                 break;
             }
+            case OP_POP: pop(vm); break;
             case OP_EXIT: return;
             default: break;
         }

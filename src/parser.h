@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "dynarray.h"
 #include "tokenizer.h"
+#include "object.h"
 
 typedef enum {
     EXP_LITERAL,
@@ -50,7 +51,6 @@ typedef enum {
 typedef struct Statement Statement;
 
 typedef DynArray(Statement) Statement_DynArray;
-typedef DynArray(char *) String_DynArray;
 
 typedef struct Statement {
     StatementKind kind;

@@ -32,6 +32,7 @@ typedef struct Object {
 } Object;
 
 typedef DynArray(Object) Object_DynArray;
+typedef DynArray(char *) String_DynArray;
 
 #define IS_BOOL(object) ((object)->type == OBJ_BOOLEAN)
 #define IS_NUM(object) ((object)->type == OBJ_NUMBER)
