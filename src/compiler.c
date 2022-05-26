@@ -363,7 +363,7 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_SET_LOCAL: {
                 uint8_t index = *++ip;
                 printf("%d: ", i);
-                printf("OP_GET_LOCAL, byte (%d)\n", index);
+                printf("OP_SET_LOCAL, byte (%d)\n", index);
                 ++i;
                 break;
             }
@@ -434,7 +434,6 @@ void disassemble(BytecodeChunk *chunk) {
                 printf(", byte (paramcount: '%d')", paramcount);
                 for (; i < paramcount; ++i) {
                     uint8_t paramname_index = *++ip;
-                    ++i;
                     printf(", byte (param: '%d' (%s)')", paramname_index, chunk->sp[paramname_index]);
                 }
                 uint8_t location = *++ip;
