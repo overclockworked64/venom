@@ -5,7 +5,7 @@
 #include "vm.h"
 #include "object.h"
 
-#define venom_debug
+
 
 void init_vm(VM *vm) {
     memset(vm, 0, sizeof(VM));
@@ -72,6 +72,7 @@ do { \
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
         ip++
     ) {
+#ifdef venom_debug
         printf("current instruction: ");
         switch (*ip) {
             case OP_PRINT: printf("OP_PRINT"); break;
@@ -109,7 +110,7 @@ do { \
             case OP_EXIT: printf("OP_EXIT"); break;
         }
         printf("\n");
-
+#endif
         switch (*ip) {  /* instruction pointer */
             case OP_PRINT: {
                 Object object = pop(vm);
@@ -184,7 +185,6 @@ do { \
                 break;
             }
             case OP_GET_LOCAL: {
-                printf("tos before pushing is: %ld\n", vm->tos);
                 uint8_t index = READ_UINT8();
                 if (index != 0) {
                     Object obj = REVERSE_LOOKUP(index);

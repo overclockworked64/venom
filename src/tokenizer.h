@@ -1,7 +1,7 @@
 #ifndef venom_tokenizer_h
 #define venom_tokenizer_h
 
-#define venom_debug
+
 
 typedef enum {
     TOKEN_PRINT,

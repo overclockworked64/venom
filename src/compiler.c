@@ -8,7 +8,7 @@
 #include "vm.h"
 #include "util.h"
 
-#define venom_debug
+
 
 void init_compiler(Compiler *compiler) {
     memset(compiler, 0, sizeof(Compiler));
@@ -173,12 +173,12 @@ static void compile_expression(
                 int index = var_index(compiler->locals, exp.name);
                 if (index == -1) {
                     dynarray_insert(&compiler->locals, exp.name);
-                    printf("emitting OP_GET_LOCAL for name: %s with index %ld\n", exp.name, compiler->locals.count - 1);
+                    // printf("emitting OP_GET_LOCAL for name: %s with index %ld\n", exp.name, compiler->locals.count - 1);
                     emit_bytes(chunk, 2, OP_GET_LOCAL, compiler->locals.count - 1);
-                    printf("emitting oP_GET_LOCAL\n");
+                    // printf("emitting oP_GET_LOCAL\n");
                 } else {
                     emit_bytes(chunk, 2, OP_GET_LOCAL, index);
-                    printf("emitting oP_GET_LOCAL\n");
+                    // printf("emitting oP_GET_LOCAL\n");
                 }
             }
             break;
@@ -426,31 +426,33 @@ void print_instruction(char *prefix, Opcode opcode) {
 
 void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size, char *prefix) {
     for (;;) {
+#ifdef venom_debug
         print_instruction(prefix, chunk->code.data[index]);
+#endif
         switch (chunk->code.data[index]) {
             case OP_CONST:
             case OP_STR_CONST:
             case OP_GET_GLOBAL: {
                 size++;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index += 2;
                 break;
             }
             case OP_GET_LOCAL: {
                 int current_index = chunk->code.data[index+1];
-                printf("size is: %d \t current_index is: %d\n", size, current_index);
+                //printf("size is: %d \t current_index is: %d\n", size, current_index);
                 chunk->code.data[index+1] = size - current_index;
                 compiler->stack_sizes.data[index] = ++size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
-                printf("OP_GET_LOCAL index after patching is: %d\n", chunk->code.data[index+1]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf("OP_GET_LOCAL index after patching is: %d\n", chunk->code.data[index+1]);
                 index += 2;
                 break;
             }
             case OP_SET_LOCAL: {
                 size--;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 int current_index = chunk->code.data[index+1];
                 chunk->code.data[index+1] = size - current_index;
                 index += 2;
@@ -459,7 +461,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
             case OP_DEEP_SET: {
                 size--;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 chunk->code.data[index+1] = size;
                 index += 2;
                 break;
@@ -467,7 +469,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
             case OP_SET_GLOBAL: {
                 size -= 2;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index++;
                 break;
             }
@@ -482,7 +484,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
             case OP_PRINT: {
                 size--;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index++;
                 break;
             }
@@ -492,11 +494,11 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                     offset <<= 8;
                     offset |= chunk->code.data[index+2];
                     compiler->stack_sizes.data[index] = size - 1;
-                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                     backpatch_stack_size(compiler, chunk, index+offset+3, size-1, "else");
                     size--;
                     compiler->stack_sizes.data[index] = size;
-                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                     index += 3;
                     break;
                 } else {
@@ -508,27 +510,27 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 offset <<= 8;
                 offset |= chunk->code.data[index+2];
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index += offset + 3;
                 break;
             }
             case OP_FUNC: {
                 uint8_t paramcount = chunk->code.data[index+2];
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index += 4 + paramcount;                
                 break;
             }
             case OP_RET: {
                 size--;
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 return;
             }
             case OP_NOT:
             case OP_NEGATE: {
                 compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 index++;
                 break;
             }
@@ -538,7 +540,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                     Object *location = table_get(&compiler->functions, funcname);
                     size++;
                     compiler->stack_sizes.data[index] = size;
-                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                     compiler->stack[compiler->tos++] = index+1;
                     index = location->as.dval;
                     break;
@@ -547,7 +549,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 }
             }
             case OP_EXIT: {
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                // printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 return;
             }
             default: printf("Unknown instruction.\n"); break;
