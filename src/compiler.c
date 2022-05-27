@@ -161,22 +161,22 @@ static void compile_expression(
 ) {
     switch (exp.kind) {
         case EXP_LITERAL: {
-            compiler->stack_size++;
             uint8_t const_index = add_constant(chunk, exp.data.dval);
             emit_bytes(chunk, 2, OP_CONST, const_index);
             break;
         }
         case EXP_VARIABLE: {
-            compiler->stack_size++;
             uint8_t name_index = add_string(chunk, exp.name);
             if (!scoped) {
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
                 int index = var_index(compiler->locals, exp.name);
-                emit_bytes(chunk, 2, OP_GET_LOCAL, compiler->stack_size + compiler->paramcount - index);
-                printf("compiler->stack_size is: %d\n", compiler->stack_size);
-                printf("index is: %d\n", index);
-                printf("compiler->paramcount is: %d\n", compiler->paramcount);
+                if (index == -1) {
+                    dynarray_insert(&compiler->locals, exp.name);
+                    emit_bytes(chunk, 2, OP_GET_LOCAL, compiler->locals.count - 1);
+                } else {
+                    emit_bytes(chunk, 2, OP_GET_LOCAL, index);
+                }
             }
             break;
         }
@@ -191,34 +191,24 @@ static void compile_expression(
 
             if (strcmp(exp.operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "-") == 0) {
-                emit_byte(chunk, OP_SUB);
-                compiler->stack_size--;
+                emit_byte(chunk, OP_SUB);                
             } else if (strcmp(exp.operator, "*") == 0) {
                 emit_byte(chunk, OP_MUL);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, ">") == 0) {
                 emit_byte(chunk, OP_GT);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "<") == 0) {
                 emit_byte(chunk, OP_LT);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, ">=") == 0) {
                 emit_bytes(chunk, 2, OP_LT, OP_NOT);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "<=") == 0) {
                 emit_bytes(chunk, 2, OP_GT, OP_NOT);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
-                compiler->stack_size--;
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
-                compiler->stack_size--;
             }
 
             break;
@@ -229,94 +219,12 @@ static void compile_expression(
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 2, OP_INVOKE, funcname_index);
-            compiler->stack_size++;
-            emit_bytes(chunk, 2, OP_SET_LOCAL, compiler->paramcount);
-            compiler->stack_size--;
+            emit_bytes(chunk, 2, OP_SET_LOCAL, funcname_index);            
             for (size_t i = 0; i < compiler->paramcount - 1; ++i) {
                 emit_byte(chunk, OP_POP);
-                compiler->stack_size--;
+                
             }
 
-            break;
-        }
-        default: assert(0);
-    }
-}
-
-static void compile_expression_noemit(Compiler *compiler, BytecodeChunk *chunk, Expression exp, bool scoped) {
-    switch (exp.kind) {
-        case EXP_LITERAL: {
-            break;
-        }
-        case EXP_VARIABLE: {
-            dynarray_insert(&compiler->locals, exp.name);
-            break;
-        }
-        case EXP_UNARY: {
-            compile_expression_noemit(compiler, chunk, *exp.data.exp, scoped);
-            break;
-        }
-        case EXP_BINARY: {
-            compile_expression_noemit(compiler, chunk, exp.data.binexp->lhs, scoped);
-            compile_expression_noemit(compiler, chunk, exp.data.binexp->rhs, scoped);
-            break;
-        }
-        case EXP_CALL: {
-            for (size_t i = 0; i < exp.arguments.count; ++i) {
-                compile_expression_noemit(compiler, chunk, exp.arguments.data[i], scoped);
-            }
-            break;
-        }
-        default: assert(0);
-    }
-}
-
-void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
-    switch (stmt.kind) {
-        case STMT_PRINT: {
-            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
-            break;
-        }
-        case STMT_LET:
-        case STMT_ASSIGN: {
-            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
-            if (!scoped) {
-            } else {
-                dynarray_insert(&compiler->locals, stmt.name);
-                int index = var_index(compiler->locals, stmt.name);
-            }
-            break;
-        }
-        case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                first_pass(compiler, chunk, stmt.stmts.data[i], scoped);
-            }
-            break;
-        }
-        case STMT_IF: {
-            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
-
-            first_pass(compiler, chunk, *stmt.then_branch, scoped);
-
-            if (stmt.else_branch != NULL) {
-                first_pass(compiler, chunk, *stmt.else_branch, scoped);
-            }
-
-            break;
-        }
-        case STMT_WHILE: {    
-            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
-            first_pass(compiler, chunk, *stmt.body, scoped);
-            break;
-        }
-        case STMT_FN: {
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                first_pass(compiler, chunk, stmt.stmts.data[i], true);
-            }
-            break;
-        }
-        case STMT_RETURN: { 
-            compile_expression_noemit(compiler, chunk, stmt.exp, scoped);
             break;
         }
         default: assert(0);
@@ -438,7 +346,7 @@ void disassemble(BytecodeChunk *chunk) {
                 }
                 uint8_t location = *++ip;
                 printf(", byte (location: '%d')\n", location);
-                i++;
+                i += 2 + paramcount;
                 break;
             }
             case OP_INVOKE: {
@@ -479,28 +387,175 @@ void disassemble(BytecodeChunk *chunk) {
 }
 #endif
 
+#ifdef venom_debug
+void print_instruction(Opcode opcode) {
+    switch (opcode) {
+        case OP_PRINT: printf("OP_PRINT"); break;
+        case OP_ADD: printf("OP_ADD"); break;
+        case OP_SUB: printf("OP_SUB"); break;
+        case OP_MUL: printf("OP_MUL"); break;
+        case OP_DIV: printf("OP_DIV"); break;
+        case OP_EQ: printf("OP_EQ"); break;
+        case OP_GT: printf("OP_GT"); break;
+        case OP_LT: printf("OP_LT"); break;
+        case OP_NOT: printf("OP_NOT"); break;
+        case OP_NEGATE: printf("OP_NEGATE"); break;
+        case OP_JMP: printf("OP_JMP"); break;
+        case OP_JZ: printf("OP_JZ"); break;
+        case OP_FUNC: printf("OP_FUNC"); break;
+        case OP_INVOKE: printf("OP_INVOKE"); break;
+        case OP_RET: printf("OP_RET"); break;
+        case OP_CONST: printf("OP_CONST"); break;
+        case OP_STR_CONST: printf("OP_STR_CONST"); break;
+        case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
+        case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
+        case OP_SET_LOCAL: printf("OP_SET_LOCAL"); break;
+        case OP_GET_LOCAL: printf("OP_GET_LOCAL");break;
+        case OP_POP: printf("OP_POP"); break;
+        case OP_EXIT: printf("OP_EXIT"); break;
+    }
+}
+#endif
+
+void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size) {
+    for (;;) {
+        print_instruction(chunk->code.data[index]);
+        switch (chunk->code.data[index]) {
+            case OP_CONST:
+            case OP_STR_CONST:
+            case OP_GET_GLOBAL: {
+                size++;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index += 2;
+                break;
+            }
+            case OP_GET_LOCAL: {
+                size++;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                int current_index = chunk->code.data[index+1];
+                chunk->code.data[index+1] = size - current_index - 1;
+                index += 2;
+                break;
+            }
+            case OP_SET_LOCAL: {
+                size--;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                int current_index = chunk->code.data[index+1];
+                chunk->code.data[index+1] = size - current_index;
+                index += 2;
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                size -= 2;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index++;
+                break;
+            }
+            case OP_ADD:
+            case OP_SUB:
+            case OP_MUL:
+            case OP_DIV:
+            case OP_EQ:
+            case OP_GT:
+            case OP_LT:
+            case OP_POP:
+            case OP_PRINT: {
+                size--;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index++;
+                break;
+            }
+            case OP_JZ: {
+                printf("index is: %d\n", index);
+                printf("compiler->stack_sizes.data[index] is: %d\n", compiler->stack_sizes.data[index]);
+                if (compiler->stack_sizes.data[index] == 255) {
+                    int offset = chunk->code.data[index+1];
+                    offset <<= 8;
+                    offset |= chunk->code.data[index+2];
+                    compiler->stack_sizes.data[index] = size - 1;
+                    backpatch_stack_size(compiler, chunk, index+offset+3, size-1);
+                    size--;
+                    compiler->stack_sizes.data[index] = size;
+                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    index += 3;
+                    break;
+                } else {
+                    return;
+                }
+            }
+            case OP_JMP: {
+                int offset = chunk->code.data[index+1];
+                offset <<= 8;
+                offset |= chunk->code.data[index+2];
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index += offset + 3;
+                break;
+            }
+            case OP_FUNC: {
+                uint8_t paramcount = chunk->code.data[index+2];
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index += 4 + paramcount;                
+                break;
+            }
+            case OP_RET: {
+                size -= 2;
+                compiler->stack_sizes.data[index] = size;
+                // assert(compiler->stack_sizes.data[index] == 1);
+                return;
+            }
+            case OP_NOT:
+            case OP_NEGATE: {
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index++;
+                break;
+            }
+            case OP_INVOKE: {
+                char *funcname = chunk->sp[chunk->code.data[index+1]];
+                Object *location = table_get(&compiler->functions, funcname);
+                size++;
+                if (compiler->stack_sizes.data[index] == size) return;                
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                index = location->as.dval;
+                break;
+            }
+            case OP_EXIT: {
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                return;
+            }
+            default: printf("Unknown instruction.\n"); break;
+        }
+    }
+}
+
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
     switch (stmt.kind) {
         case STMT_PRINT: {
             compile_expression(compiler, chunk, stmt.exp, scoped);
-            emit_byte(chunk, OP_PRINT);
-            compiler->stack_size--;
+            emit_byte(chunk, OP_PRINT);        
             break;
         }
         case STMT_LET:
         case STMT_ASSIGN: {
             compile_expression(compiler, chunk, stmt.exp, scoped);
             if (!scoped) {
-                compiler->stack_size -= 2;
                 emit_byte(chunk, OP_SET_GLOBAL);
             } else {
-                compiler->stack_size--;
                 int index = var_index(compiler->locals, stmt.name);
-                emit_bytes(
-                    chunk, 2,
-                    OP_SET_LOCAL,
-                    compiler->stack_size + compiler->paramcount - index + 1
-                );
+                if (index == -1) {
+                    dynarray_insert(&compiler->locals, stmt.name);
+                    emit_bytes(chunk, 2, OP_SET_LOCAL, compiler->locals.count - 1);
+                } else {
+                    emit_bytes(chunk, 2, OP_SET_LOCAL, index);
+                }
             }
             break;
         }
@@ -525,7 +580,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * after we compile the 'then' branch because at that point the
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
-            compiler->stack_size--;
+            
             compile(compiler, chunk, *stmt.then_branch, scoped);
 
             int else_jump = emit_jump(chunk, OP_JMP);
@@ -562,7 +617,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * be known only after we compile the body of the 'while' loop,
              * because at that point its size is known. */ 
             int exit_jump = emit_jump(chunk, OP_JZ);
-            compiler->stack_size--;
+            
             compile(compiler, chunk, *stmt.body, scoped);
 
             /* Then, we emit OP_JMP with a negative offset. */
@@ -591,6 +646,8 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
            
             /* Emit the location of the start of the function. */
             emit_byte(chunk, (uint8_t)chunk->code.count + 4);
+
+            table_insert(&compiler->functions, stmt.name, (Object){ .type = OBJ_NUMBER, .as.dval = chunk->code.count + 3});
             
             int jump = emit_jump(chunk, OP_JMP);
 
@@ -607,7 +664,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
         case STMT_RETURN: { 
             compile_expression(compiler, chunk, stmt.exp, scoped);
             emit_byte(chunk, OP_RET);
-            compiler->stack_size--;
+            
             break;
         }
         default: assert(0);

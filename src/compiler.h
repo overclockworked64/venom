@@ -7,6 +7,7 @@
 #include "dynarray.h"
 #include "parser.h"
 #include "object.h"
+#include "table.h"
 
 typedef enum {
     OP_PRINT,
@@ -45,9 +46,10 @@ typedef struct BytecodeChunk {
 } BytecodeChunk;
 
 typedef struct {
-    int stack_size;
+    Uint8DynArray stack_sizes;
     int paramcount;
     String_DynArray locals;
+    Table functions;
 } Compiler;
 
 void init_chunk(BytecodeChunk *chunk);
@@ -56,5 +58,6 @@ void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool s
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 void init_compiler(Compiler *compiler);
+void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size);
 
 #endif
