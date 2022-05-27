@@ -438,21 +438,25 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 break;
             }
             case OP_GET_LOCAL: {
-                int current_index = chunk->code.data[index+1];
-                printf("size is: %d \t current_index is: %d\n", size, current_index);
-                chunk->code.data[index+1] = size - current_index;
-                compiler->stack_sizes.data[index] = ++size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
-                printf("OP_GET_LOCAL index after patching is: %d\n", chunk->code.data[index+1]);
-                index += 2;
-                break;
+                if (compiler->stack_sizes.data[index] == 255) {
+                    int current_index = chunk->code.data[index+1];
+                    printf("size is: %d \t current_index is: %d\n", size, current_index);
+                    chunk->code.data[index+1] = size - current_index - 1;
+                    compiler->stack_sizes.data[index] = ++size;
+                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    printf("OP_GET_LOCAL index after patching is: %d\n", chunk->code.data[index+1]);
+                    index += 2;
+                    break;
+                } else {
+                    return;
+                }
             }
             case OP_SET_LOCAL: {
                 size--;
                 compiler->stack_sizes.data[index] = size;
                 printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 int current_index = chunk->code.data[index+1];
-                chunk->code.data[index+1] = size - current_index;
+                chunk->code.data[index+1] = size - current_index - 1;
                 index += 2;
                 break;
             }
@@ -460,7 +464,7 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 size--;
                 compiler->stack_sizes.data[index] = size;
                 printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
-                chunk->code.data[index+1] = size;
+                // chunk->code.data[index+1] = size;
                 index += 2;
                 break;
             }
@@ -683,12 +687,10 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
         }
         case STMT_RETURN: { 
             compile_expression(compiler, chunk, stmt.exp, scoped);
-            emit_bytes(chunk, 2, OP_DEEP_SET, 2);
+            for (size_t i = 0; i < compiler->paramcount; ++i) {
+                emit_bytes(chunk, 2, OP_DEEP_SET, 1);
+            }
             emit_byte(chunk, OP_RET);
-            // for (size_t i = 0; i < compiler->paramcount - 1; ++i) {
-            //     emit_byte(chunk, OP_POP);
-            //     printf("emitting OP_POP\n");                
-            // }
             break;
         }
         default: assert(0);

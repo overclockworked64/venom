@@ -1,0 +1,6 @@
+fn foo(a, b) {
+    a = a + b;
+    return b;
+}
+
+print foo(1, 2);

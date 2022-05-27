@@ -190,7 +190,7 @@ do { \
                     Object obj = REVERSE_LOOKUP(index);
                     push(vm, obj);
                 } else {
-                    push(vm, vm->stack[vm->tos-3]);
+                    push(vm, vm->stack[vm->tos-2]);
                 }
                 break;
             }
@@ -277,8 +277,18 @@ do { \
 
                 uint8_t argcount = value->as.func.paramcount;
 
+                Object arguments[argcount];
+                for (int i = 0; i < argcount; ++i) {
+                    arguments[i] = pop(vm);
+                }
+
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
+
+                for (int i = argcount - 1; i >= 0; --i) {
+                    push(vm, arguments[i]);
+                }
+
 
                 /* We modify ip so that it points to one instruction
                  * just before the code we're invoking. */
@@ -292,11 +302,11 @@ do { \
                  * the return address. We need to get the return
                  * address in order to modify ip and return to the
                  * called. We need to first pop both of them: */
-                // Object returnvalue = pop(vm);
+                Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
                 /* Then, we put the return value back on the stack. */
-                // push(vm, returnvalue);
+                push(vm, returnvalue);
 
                 /* Finally, we modify the instruction pointer. */
                 ip = returnaddr.as.ptr;
@@ -305,6 +315,7 @@ do { \
             }
             case OP_DEEP_SET: {
                 uint8_t index = READ_UINT8();
+                printf("deep set index: %d\n", index);
                 Object obj = pop(vm);
                 REVERSE_LOOKUP(index) = obj;
                 break;

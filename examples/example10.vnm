@@ -1,0 +1,11 @@
+fn f(x, y) { 
+    if (x == 0) {
+        return 0;
+    }
+    if (y == 0) {
+        return 0;
+    }
+    return f(x-1, y-2) + f(y-2, x-1);
+}
+
+print f(2, 3);
