@@ -173,9 +173,12 @@ static void compile_expression(
                 int index = var_index(compiler->locals, exp.name);
                 if (index == -1) {
                     dynarray_insert(&compiler->locals, exp.name);
+                    printf("emitting OP_GET_LOCAL for name: %s with index %ld\n", exp.name, compiler->locals.count - 1);
                     emit_bytes(chunk, 2, OP_GET_LOCAL, compiler->locals.count - 1);
+                    printf("emitting oP_GET_LOCAL\n");
                 } else {
                     emit_bytes(chunk, 2, OP_GET_LOCAL, index);
+                    printf("emitting oP_GET_LOCAL\n");
                 }
             }
             break;
@@ -219,12 +222,6 @@ static void compile_expression(
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 2, OP_INVOKE, funcname_index);
-            emit_bytes(chunk, 2, OP_SET_LOCAL, funcname_index);            
-            for (size_t i = 0; i < compiler->paramcount - 1; ++i) {
-                emit_byte(chunk, OP_POP);
-                
-            }
-
             break;
         }
         default: assert(0);
@@ -354,6 +351,7 @@ void disassemble(BytecodeChunk *chunk) {
                 char *funcname = chunk->sp[funcname_index];
                 printf("%d: ", i);
                 printf("OP_INVOKE, byte (funcname_index: '%d' ('%s')\n", funcname_index, funcname);
+                ++i;
                 break;
             }
             case OP_RET: {
@@ -381,14 +379,22 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_POP\n");
                 break;
             }
-            default: printf("Unknown instruction.\n"); break;
+            case OP_DEEP_SET: {
+                uint8_t index = *++ip;
+                printf("%d: ", i);
+                printf("OP_DEEP_SET, byte (%d)\n", index);
+                ++i;
+                break;
+            }
+            default: printf("Unknown instruction: %d.\n", *ip); break;
         }
     }
 }
 #endif
 
 #ifdef venom_debug
-void print_instruction(Opcode opcode) {
+void print_instruction(char *prefix, Opcode opcode) {
+    printf("%s: ", prefix);
     switch (opcode) {
         case OP_PRINT: printf("OP_PRINT"); break;
         case OP_ADD: printf("OP_ADD"); break;
@@ -413,13 +419,14 @@ void print_instruction(Opcode opcode) {
         case OP_GET_LOCAL: printf("OP_GET_LOCAL");break;
         case OP_POP: printf("OP_POP"); break;
         case OP_EXIT: printf("OP_EXIT"); break;
+        case OP_DEEP_SET: printf("OP_DEEP_SET"); break;
     }
 }
 #endif
 
-void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size) {
+void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size, char *prefix) {
     for (;;) {
-        print_instruction(chunk->code.data[index]);
+        print_instruction(prefix, chunk->code.data[index]);
         switch (chunk->code.data[index]) {
             case OP_CONST:
             case OP_STR_CONST:
@@ -431,11 +438,12 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 break;
             }
             case OP_GET_LOCAL: {
-                size++;
-                compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 int current_index = chunk->code.data[index+1];
-                chunk->code.data[index+1] = size - current_index - 1;
+                printf("size is: %d \t current_index is: %d\n", size, current_index);
+                chunk->code.data[index+1] = size - current_index;
+                compiler->stack_sizes.data[index] = ++size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                printf("OP_GET_LOCAL index after patching is: %d\n", chunk->code.data[index+1]);
                 index += 2;
                 break;
             }
@@ -445,6 +453,14 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 int current_index = chunk->code.data[index+1];
                 chunk->code.data[index+1] = size - current_index;
+                index += 2;
+                break;
+            }
+            case OP_DEEP_SET: {
+                size--;
+                compiler->stack_sizes.data[index] = size;
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                chunk->code.data[index+1] = size;
                 index += 2;
                 break;
             }
@@ -471,14 +487,13 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 break;
             }
             case OP_JZ: {
-                printf("index is: %d\n", index);
-                printf("compiler->stack_sizes.data[index] is: %d\n", compiler->stack_sizes.data[index]);
                 if (compiler->stack_sizes.data[index] == 255) {
                     int offset = chunk->code.data[index+1];
                     offset <<= 8;
                     offset |= chunk->code.data[index+2];
                     compiler->stack_sizes.data[index] = size - 1;
-                    backpatch_stack_size(compiler, chunk, index+offset+3, size-1);
+                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    backpatch_stack_size(compiler, chunk, index+offset+3, size-1, "else");
                     size--;
                     compiler->stack_sizes.data[index] = size;
                     printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
@@ -505,9 +520,9 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 break;
             }
             case OP_RET: {
-                size -= 2;
+                size--;
                 compiler->stack_sizes.data[index] = size;
-                // assert(compiler->stack_sizes.data[index] == 1);
+                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
                 return;
             }
             case OP_NOT:
@@ -518,14 +533,18 @@ void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, i
                 break;
             }
             case OP_INVOKE: {
-                char *funcname = chunk->sp[chunk->code.data[index+1]];
-                Object *location = table_get(&compiler->functions, funcname);
-                size++;
-                if (compiler->stack_sizes.data[index] == size) return;                
-                compiler->stack_sizes.data[index] = size;
-                printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
-                index = location->as.dval;
-                break;
+                if (compiler->stack_sizes.data[index] == 255) {
+                    char *funcname = chunk->sp[chunk->code.data[index+1]];
+                    Object *location = table_get(&compiler->functions, funcname);
+                    size++;
+                    compiler->stack_sizes.data[index] = size;
+                    printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
+                    compiler->stack[compiler->tos++] = index+1;
+                    index = location->as.dval;
+                    break;
+                } else {
+                    return;
+                }
             }
             case OP_EXIT: {
                 printf(" stack size: %d\n", compiler->stack_sizes.data[index]);
@@ -640,6 +659,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
 
             /* Emit parameter names. */
             for (size_t i = 0; i < stmt.parameters.count; ++i) {
+                dynarray_insert(&compiler->locals, stmt.parameters.data[i]);
                 uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
                 emit_byte(chunk, parameter_index);
             }
@@ -663,8 +683,12 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
         }
         case STMT_RETURN: { 
             compile_expression(compiler, chunk, stmt.exp, scoped);
+            emit_bytes(chunk, 2, OP_DEEP_SET, 2);
             emit_byte(chunk, OP_RET);
-            
+            // for (size_t i = 0; i < compiler->paramcount - 1; ++i) {
+            //     emit_byte(chunk, OP_POP);
+            //     printf("emitting OP_POP\n");                
+            // }
             break;
         }
         default: assert(0);

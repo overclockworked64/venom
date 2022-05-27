@@ -60,7 +60,7 @@ void run_file(char *file) {
     }
     dynarray_insert(&chunk.code, OP_EXIT); 
 
-    backpatch_stack_size(&compiler, &chunk, 0, 0);
+    backpatch_stack_size(&compiler, &chunk, 0, 0, "then");
 
     VM vm;
     init_vm(&vm);

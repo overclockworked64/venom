@@ -32,6 +32,7 @@ typedef enum {
     OP_GET_LOCAL,
     OP_SET_LOCAL,
     OP_POP,
+    OP_DEEP_SET,
     OP_EXIT,
 } Opcode;
 
@@ -50,6 +51,8 @@ typedef struct {
     int paramcount;
     String_DynArray locals;
     Table functions;
+    int stack[256];
+    int tos;
 } Compiler;
 
 void init_chunk(BytecodeChunk *chunk);
@@ -58,6 +61,6 @@ void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool s
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 void init_compiler(Compiler *compiler);
-void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size);
+void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size, char *prefix);
 
 #endif

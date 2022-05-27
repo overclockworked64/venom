@@ -93,6 +93,10 @@ do { \
             case OP_STR_CONST: printf("OP_STR_CONST"); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
+            case OP_DEEP_SET: {
+                printf("OP_DEEP_SET: %d", ip[1]);
+                break;
+            }
             case OP_SET_LOCAL: {
                 printf("OP_SET_LOCAL: %d", ip[1]);
                 break;
@@ -182,9 +186,12 @@ do { \
             case OP_GET_LOCAL: {
                 printf("tos before pushing is: %ld\n", vm->tos);
                 uint8_t index = READ_UINT8();
-                printf("helloooooooooooooooooooooooooooooooooooooo: %d\n", index);
-                Object obj = REVERSE_LOOKUP(index);
-                push(vm, obj);
+                if (index != 0) {
+                    Object obj = REVERSE_LOOKUP(index);
+                    push(vm, obj);
+                } else {
+                    push(vm, vm->stack[vm->tos-3]);
+                }
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
@@ -285,15 +292,21 @@ do { \
                  * the return address. We need to get the return
                  * address in order to modify ip and return to the
                  * called. We need to first pop both of them: */
-                Object returnvalue = pop(vm);
+                // Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
                 /* Then, we put the return value back on the stack. */
-                push(vm, returnvalue);
+                // push(vm, returnvalue);
 
                 /* Finally, we modify the instruction pointer. */
                 ip = returnaddr.as.ptr;
 
+                break;
+            }
+            case OP_DEEP_SET: {
+                uint8_t index = READ_UINT8();
+                Object obj = pop(vm);
+                REVERSE_LOOKUP(index) = obj;
                 break;
             }
             case OP_POP: pop(vm); break;
