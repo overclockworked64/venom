@@ -1,6 +1,8 @@
 #ifndef venom_dynarray_h
 #define venom_dynarray_h
 
+#include <stddef.h>
+
 #define DynArray(T) struct { \
     T *data; \
     size_t count; \
@@ -20,5 +22,9 @@ do { \
 do { \
     free((array)->data); \
 } while (0)
+
+typedef DynArray(int) IntDynArray;
+
+int dynarray_get(IntDynArray array, int index);
 
 #endif

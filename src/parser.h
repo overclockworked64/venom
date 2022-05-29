@@ -4,15 +4,21 @@
 #include <stdbool.h>
 #include "dynarray.h"
 #include "tokenizer.h"
+#include "object.h"
 
 typedef enum {
     EXP_LITERAL,
     EXP_VARIABLE,
     EXP_UNARY,
     EXP_BINARY,
+    EXP_CALL,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;
+
+typedef struct Expression Expression;
+
+typedef DynArray(Expression) Expression_DynArray;
 
 typedef struct Expression {
     ExpressionKind kind;
@@ -23,6 +29,7 @@ typedef struct Expression {
     } data;
     char *name;
     char *operator;
+    Expression_DynArray arguments;
 } Expression;
 
 typedef struct BinaryExpression {
@@ -37,6 +44,8 @@ typedef enum {
     STMT_BLOCK,
     STMT_IF,
     STMT_WHILE,
+    STMT_FN,
+    STMT_RETURN,
 } StatementKind;
 
 typedef struct Statement Statement;
@@ -51,6 +60,7 @@ typedef struct Statement {
     Statement *then_branch; /* used by if */
     Statement *else_branch; /* used by if */
     Statement *body; /* used by while */
+    String_DynArray parameters;
 } Statement;
 
 typedef struct {

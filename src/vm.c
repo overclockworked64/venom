@@ -3,6 +3,7 @@
 #include <string.h>
 #include "compiler.h"
 #include "vm.h"
+#include "object.h"
 
 #define venom_debug
 
@@ -27,7 +28,7 @@ static Object pop(VM *vm) {
     return vm->stack[--vm->tos];
 }
 
-void run(VM *vm, BytecodeChunk *chunk) {
+void run(VM *vm, Compiler *compiler, BytecodeChunk *chunk) {
 #define BINARY_OP(vm, op, wrapper) \
 do { \
     /* operands are already on the stack */ \
@@ -38,7 +39,7 @@ do { \
 
 #define READ_UINT8() (*++ip)
 
-#define READ_INT16() \
+#define READ_INT16(offset) \
     /* ip points to one of the jump instructions and there \
      * is a 2-byte operand (offset) that comes after the jump \
      * instruction. We want to increment the ip so it points \
@@ -46,8 +47,18 @@ do { \
      * offset from the two bytes. Then ip is incremented in \
      * the loop again so it points to the next instruction \
      * (as opposed to pointing somewhere in the middle). */ \
-    (ip += 2, \
+    (ip += 2 + offset, \
     (int16_t)((ip[-1] << 8) | ip[0]))
+
+#define PRINT_STACK() \
+do { \
+    printf("stack: ["); \
+    for (size_t i = 0; i < vm->tos; ++i) { \
+        print_object(&vm->stack[i]); \
+        printf(", "); \
+    } \
+    printf("]\n"); \
+} while(0)
 
 #ifdef venom_debug
     disassemble(chunk);
@@ -58,6 +69,44 @@ do { \
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
         ip++
     ) {
+        printf("current instruction: ");
+        switch (*ip) {
+            case OP_PRINT: printf("OP_PRINT"); break;
+            case OP_ADD: printf("OP_ADD"); break;
+            case OP_SUB: printf("OP_SUB"); break;
+            case OP_MUL: printf("OP_MUL"); break;
+            case OP_DIV: printf("OP_DIV"); break;
+            case OP_EQ: printf("OP_EQ"); break;
+            case OP_GT: printf("OP_GT"); break;
+            case OP_LT: printf("OP_LT"); break;
+            case OP_NOT: printf("OP_NOT"); break;
+            case OP_NEGATE: printf("OP_NEGATE"); break;
+            case OP_JMP: printf("OP_JMP"); break;
+            case OP_JZ: printf("OP_JZ"); break;
+            case OP_FUNC: printf("OP_FUNC"); break;
+            case OP_INVOKE: printf("OP_INVOKE"); break;
+            case OP_RET: printf("OP_RET"); break;
+            case OP_CONST: printf("OP_CONST"); break;
+            case OP_STR_CONST: printf("OP_STR_CONST"); break;
+            case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
+            case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
+            case OP_DEEP_SET: {
+                printf("OP_DEEP_SET: %d", ip[1]);
+                break;
+            }
+            case OP_SET_LOCAL: {
+                printf("OP_SET_LOCAL: %d", ip[1]);
+                break;
+            }
+            case OP_GET_LOCAL: {
+                printf("OP_GET_LOCAL: %d", ip[1]);
+                break;
+            }
+            case OP_POP: printf("OP_POP"); break;
+            case OP_EXIT: printf("OP_EXIT"); break;
+        }
+        printf("\n");
+
         switch (*ip) {  /* instruction pointer */
             case OP_PRINT: {
                 Object object = pop(vm);
@@ -125,6 +174,16 @@ do { \
                 push(vm, AS_NUM(READ_UINT8()));
                 break;
             }
+            case OP_SET_LOCAL: {
+                uint8_t index = READ_UINT8();
+                Object obj = pop(vm);
+                break;
+            }
+            case OP_GET_LOCAL: {
+                uint8_t index = READ_UINT8();
+                push(vm, vm->stack[vm->fp + index]);
+                break;
+            }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
             case OP_SUB: BINARY_OP(vm, -, AS_NUM); break;
             case OP_MUL: BINARY_OP(vm, *, AS_NUM); break;
@@ -134,14 +193,14 @@ do { \
             case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
             case OP_JZ: {
                 /* Jump if zero. */
-                int16_t offset = READ_INT16();
+                int16_t offset = READ_INT16(0);
                 if (!BOOL_VAL(pop(vm))) {
                     ip += offset;
                 }
                 break;
             }
             case OP_JMP: {
-                int16_t offset = READ_INT16();
+                int16_t offset = READ_INT16(0);
                 ip += offset;
                 break;
             }
@@ -153,9 +212,102 @@ do { \
                 push(vm, AS_BOOL(BOOL_VAL(pop(vm)) ^ 1));
                 break;
             }
+            case OP_FUNC: {
+                /* At this point, ip points to OP_FUNC. 
+                 * After the opcode, there is the index
+                 * of the function's name in the string
+                 * constant pool, followed by the number
+                 * of function parameters. */
+                uint8_t funcname_index = READ_UINT8();
+                uint8_t paramcount = READ_UINT8();
+
+                /* After that come the parameters, that is,
+                 * their indices in the string constant pool. */
+                for (int i = 0; i < paramcount; ++i) {
+                    uint8_t name_index = READ_UINT8();
+                    dynarray_insert(&vm->locals, (Object){ .name = chunk->sp[name_index] });
+                }
+
+                /* After the parameters, there are 3 more bytes.
+                 * The first byte is the location of the start of
+                 * the function, and the other two bytes comprise 
+                 * the size of the function in bytes. */
+                uint8_t location = READ_UINT8();
+
+                /* We make the function object... */
+                char *funcname = chunk->sp[funcname_index];
+                Function func = {
+                    .location = location,
+                    .name = funcname,
+                    .paramcount = paramcount,
+                };
+ 
+                Object funcobj = {
+                    .type = OBJ_FUNCTION,
+                    .as.func = func,
+                };
+
+                table_insert(&vm->globals, funcname, funcobj);
+
+                break;
+            }
+            case OP_INVOKE: {
+                /* We first read the index of the function name. */
+                uint8_t funcname = READ_UINT8();
+
+                /* Then, we look it up from the globals table. */ 
+                Object *value = table_get(&vm->globals, chunk->sp[funcname]);
+                if (value == NULL) {
+                    /* Runtime error if the function is not defined. */
+                    char msg[512];
+                    snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[funcname]);
+                    runtime_error(msg);
+                    return;
+                }
+
+                vm->argcount = value->as.func.paramcount;
+
+                /* Then, we push the return address on the stack. */
+                push(vm, AS_POINTER(ip));
+                
+                vm->fp = vm->tos - (1 + vm->argcount);
+                
+                /* We modify ip so that it points to one instruction
+                 * just before the code we're invoking. */
+                ip = &chunk->code.data[value->as.func.location-1];
+
+                break;
+            }
+            case OP_RET: {
+                /* By the time we encounter OP_RET, the return
+                 * value is located on the stack. Beneath it is
+                 * the return address. We need to get the return
+                 * address in order to modify ip and return to the
+                 * called. We need to first pop both of them: */
+                Object returnvalue = pop(vm);
+                Object returnaddr = pop(vm);
+
+                for (int i = 0; i < vm->argcount; i++) {
+                    pop(vm);
+                }
+
+                /* Then, we put the return value back on the stack. */
+
+                push(vm, returnvalue);
+                vm->fp = vm->tos - (vm->argcount + 2);
+
+                /* Finally, we modify the instruction pointer. */
+                ip = returnaddr.as.ptr;
+
+                break;
+            }
+            case OP_POP: pop(vm); break;
             case OP_EXIT: return;
             default: break;
         }
+#ifdef venom_debug
+        PRINT_STACK();
+#endif
     }
 #undef BINARY_OP
 #undef READ_INT16
