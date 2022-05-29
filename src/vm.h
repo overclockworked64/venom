@@ -14,6 +14,9 @@ typedef struct {
     size_t tos; /* top of stack */
     Table globals;
     Object_DynArray locals;
+    int argcount;
+    int previous_fp; /* frame pointer */
+    int fp; /* frame pointer */
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;

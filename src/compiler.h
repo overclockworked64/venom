@@ -49,10 +49,9 @@ typedef struct BytecodeChunk {
 typedef struct {
     Uint8DynArray stack_sizes;
     int paramcount;
-    String_DynArray locals;
     Table functions;
-    int stack[256];
-    int tos;
+    char *locals[256];
+    int locals_count;
 } Compiler;
 
 void init_chunk(BytecodeChunk *chunk);
@@ -61,6 +60,5 @@ void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool s
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 void init_compiler(Compiler *compiler);
-void backpatch_stack_size(Compiler *compiler, BytecodeChunk *chunk, int index, int size, char *prefix);
 
 #endif

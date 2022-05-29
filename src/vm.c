@@ -60,9 +60,6 @@ do { \
     printf("]\n"); \
 } while(0)
 
-#define REVERSE_LOOKUP(n) \
-    (vm->stack[vm->tos - n])
-
 #ifdef venom_debug
     disassemble(chunk);
 #endif
@@ -180,18 +177,11 @@ do { \
             case OP_SET_LOCAL: {
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);
-                REVERSE_LOOKUP(index) = obj;
                 break;
             }
             case OP_GET_LOCAL: {
-                printf("tos before pushing is: %ld\n", vm->tos);
                 uint8_t index = READ_UINT8();
-                if (index != 0) {
-                    Object obj = REVERSE_LOOKUP(index);
-                    push(vm, obj);
-                } else {
-                    push(vm, vm->stack[vm->tos-2]);
-                }
+                push(vm, vm->stack[vm->fp + index]);
                 break;
             }
             case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
@@ -275,21 +265,13 @@ do { \
                     return;
                 }
 
-                uint8_t argcount = value->as.func.paramcount;
-
-                Object arguments[argcount];
-                for (int i = 0; i < argcount; ++i) {
-                    arguments[i] = pop(vm);
-                }
+                vm->argcount = value->as.func.paramcount;
 
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
-
-                for (int i = argcount - 1; i >= 0; --i) {
-                    push(vm, arguments[i]);
-                }
-
-
+                
+                vm->fp = vm->tos - (1 + vm->argcount);
+                
                 /* We modify ip so that it points to one instruction
                  * just before the code we're invoking. */
                 ip = &chunk->code.data[value->as.func.location-1];
@@ -305,19 +287,18 @@ do { \
                 Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
+                for (int i = 0; i < vm->argcount; i++) {
+                    pop(vm);
+                }
+
                 /* Then, we put the return value back on the stack. */
+
                 push(vm, returnvalue);
+                vm->fp = vm->tos - (vm->argcount + 2);
 
                 /* Finally, we modify the instruction pointer. */
                 ip = returnaddr.as.ptr;
 
-                break;
-            }
-            case OP_DEEP_SET: {
-                uint8_t index = READ_UINT8();
-                printf("deep set index: %d\n", index);
-                Object obj = pop(vm);
-                REVERSE_LOOKUP(index) = obj;
                 break;
             }
             case OP_POP: pop(vm); break;

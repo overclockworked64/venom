@@ -54,14 +54,6 @@ void run_file(char *file) {
         free_stmt(stmts.data[i]);
     }
 
-
-    for (size_t j = 0; j < chunk.code.count; ++j) {
-        dynarray_insert(&compiler.stack_sizes, 255);
-    }
-    dynarray_insert(&chunk.code, OP_EXIT); 
-
-    backpatch_stack_size(&compiler, &chunk, 0, 0, "then");
-
     VM vm;
     init_vm(&vm);
     run(&vm, &compiler, &chunk);
