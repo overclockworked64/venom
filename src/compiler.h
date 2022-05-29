@@ -29,10 +29,9 @@ typedef enum {
     OP_STR_CONST,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
-    OP_GET_LOCAL,
-    OP_SET_LOCAL,
-    OP_POP,
     OP_DEEP_SET,
+    OP_DEEP_GET,
+    OP_POP,
     OP_EXIT,
 } Opcode;
 

@@ -172,13 +172,13 @@ static void compile_expression(
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
                 int index = resolve_local(compiler, exp.name);
-                printf("emitting OP_GET_LOCAL with index: %d\n", index);
+                printf("emitting OP_DEEP_GET with index: %d\n", index);
                 printf("in the locals array are: ");
                 for (int i = 0; i < compiler->locals_count; i++) {
                     printf("%s, ", compiler->locals[i]);
                 }
                 printf("\n");
-                emit_bytes(chunk, 2, OP_GET_LOCAL, index);
+                emit_bytes(chunk, 2, OP_DEEP_GET, index);
             }
             break;
         }
@@ -257,17 +257,17 @@ void disassemble(BytecodeChunk *chunk) {
                 ++i;
                 break;
             }
-            case OP_GET_LOCAL: {
+            case OP_DEEP_GET: {
                 uint8_t name_index = *++ip;
                 printf("%d: ", i);
-                printf("OP_GET_LOCAL, byte (%d): ('%s')\n", name_index, chunk->sp[name_index]);
+                printf("OP_DEEP_GET, byte (%d): ('%s')\n", name_index, chunk->sp[name_index]);
                 ++i;
                 break;
             }
-            case OP_SET_LOCAL: {
+            case OP_DEEP_SET: {
                 uint8_t index = *++ip;
                 printf("%d: ", i);
-                printf("OP_SET_LOCAL, byte (%d)\n", index);
+                printf("OP_DEEP_SET, byte (%d)\n", index);
                 ++i;
                 break;
             }
@@ -378,13 +378,6 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_POP\n");
                 break;
             }
-            case OP_DEEP_SET: {
-                uint8_t index = *++ip;
-                printf("%d: ", i);
-                printf("OP_DEEP_SET, byte (%d)\n", index);
-                ++i;
-                break;
-            }
             default: printf("Unknown instruction: %d.\n", *ip); break;
         }
     }
@@ -405,7 +398,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
                 emit_byte(chunk, OP_SET_GLOBAL);
             } else {
                 int index = resolve_local(compiler, stmt.name);
-                emit_bytes(chunk, 2, OP_SET_LOCAL, index);
+                emit_bytes(chunk, 2, OP_DEEP_SET, index);
             }
             break;
         }

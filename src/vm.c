@@ -94,12 +94,8 @@ do { \
                 printf("OP_DEEP_SET: %d", ip[1]);
                 break;
             }
-            case OP_SET_LOCAL: {
-                printf("OP_SET_LOCAL: %d", ip[1]);
-                break;
-            }
-            case OP_GET_LOCAL: {
-                printf("OP_GET_LOCAL: %d", ip[1]);
+            case OP_DEEP_GET: {
+                printf("OP_DEEP_GET: %d", ip[1]);
                 break;
             }
             case OP_POP: printf("OP_POP"); break;
@@ -174,13 +170,13 @@ do { \
                 push(vm, AS_NUM(READ_UINT8()));
                 break;
             }
-            case OP_SET_LOCAL: {
+            case OP_DEEP_SET: {
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);
                 vm->stack[vm->fp + index] = obj;
                 break;
             }
-            case OP_GET_LOCAL: {
+            case OP_DEEP_GET: {
                 uint8_t index = READ_UINT8();
                 push(vm, vm->stack[vm->fp + index]);
                 break;
