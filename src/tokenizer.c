@@ -109,8 +109,6 @@ void print_token(Token token) {
         case TOKEN_IF: printf("TOKEN_IF"); break;
         case TOKEN_ELSE: printf("TOKEN_ELSE"); break;
         case TOKEN_WHILE: printf("TOKEN_WHILE"); break;
-        case TOKEN_FN: printf("TOKEN_FN"); break;
-        case TOKEN_RETURN: printf("TOKEN_RETURN"); break;
         case TOKEN_EOF: printf("TOKEN_EOF"); break;
         case TOKEN_ERROR: printf("TOKEN_ERROR"); break;
         default: break;
@@ -136,7 +134,6 @@ Token get_token(Tokenizer *tokenizer) {
         case '{': return make_token(tokenizer, TOKEN_LEFT_BRACE, 1);
         case '}': return make_token(tokenizer, TOKEN_RIGHT_BRACE, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
-        case ',': return make_token(tokenizer, TOKEN_COMMA, 1);
         case '>': {
             if (lookahead(tokenizer, 1, "=")) {
                 return make_token(tokenizer, TOKEN_GREATER_EQUAL, 2);
@@ -167,12 +164,6 @@ Token get_token(Tokenizer *tokenizer) {
             }
             return identifier(tokenizer);
         }
-        case 'f': {
-            if (lookahead(tokenizer, 1, "n")) {
-                return make_token(tokenizer, TOKEN_FN, 2);
-            }
-            return identifier(tokenizer);
-        }
         case 'i': {
             if (lookahead(tokenizer, 1, "f")) {
                 return make_token(tokenizer, TOKEN_IF, 2);
@@ -188,12 +179,6 @@ Token get_token(Tokenizer *tokenizer) {
         case 'p': {
             if (lookahead(tokenizer, 4, "rint")) {
                 return make_token(tokenizer, TOKEN_PRINT, 5);
-            }
-            return identifier(tokenizer);
-        }
-        case 'r': {
-            if (lookahead(tokenizer, 5, "eturn")) {
-                return make_token(tokenizer, TOKEN_RETURN, 6);
             }
             return identifier(tokenizer);
         }

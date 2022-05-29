@@ -2,7 +2,6 @@
 #define venom_vm_h
 
 #define STACK_MAX 256
-#define LOCAL_MAX 256
 
 #include "compiler.h"
 #include "dynarray.h"
@@ -13,16 +12,12 @@ typedef struct {
     Object stack[STACK_MAX];
     size_t tos; /* top of stack */
     Table globals;
-    Object_DynArray locals;
-    int argcount;
-    int previous_fp; /* frame pointer */
-    int fp; /* frame pointer */
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;
 
 void init_vm(VM *vm);
 void free_vm(VM *vm);
-void run(VM *vm, Compiler *compiler, BytecodeChunk *chunk);
+void run(VM *vm, BytecodeChunk *chunk);
 
 #endif

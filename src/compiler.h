@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include "dynarray.h"
 #include "parser.h"
-#include "object.h"
-#include "table.h"
+#include "vm.h"
 
 typedef enum {
     OP_PRINT,
@@ -22,17 +21,10 @@ typedef enum {
     OP_NEGATE,
     OP_JMP,
     OP_JZ,
-    OP_FUNC,
-    OP_INVOKE,
-    OP_RET,
     OP_CONST,
     OP_STR_CONST,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
-    OP_GET_LOCAL,
-    OP_SET_LOCAL,
-    OP_POP,
-    OP_DEEP_SET,
     OP_EXIT,
 } Opcode;
 
@@ -46,19 +38,9 @@ typedef struct BytecodeChunk {
     uint8_t sp_count;
 } BytecodeChunk;
 
-typedef struct {
-    Uint8DynArray stack_sizes;
-    int paramcount;
-    Table functions;
-    char *locals[256];
-    int locals_count;
-} Compiler;
-
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
-void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
+void compile(BytecodeChunk *chunk, Statement stmt);
 void disassemble(BytecodeChunk *chunk);
-void init_compiler(Compiler *compiler);
 
 #endif

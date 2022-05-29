@@ -10,10 +10,6 @@
 
 #define venom_debug
 
-void init_compiler(Compiler *compiler) {
-    memset(compiler, 0, sizeof(Compiler));
-}
-
 void init_chunk(BytecodeChunk *chunk) {
     memset(chunk, 0, sizeof(BytecodeChunk));
 }
@@ -144,22 +140,7 @@ static void emit_loop(BytecodeChunk *chunk, int loop_start) {
     emit_byte(chunk, offset & 0xFF);
 }
 
-static int resolve_local(Compiler *compiler, char *name) {
-    for (int i = compiler->locals_count - 1; i >= 0; i--) {
-        if (strcmp(compiler->locals[i], name) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-
-static void compile_expression(
-    Compiler *compiler,
-    BytecodeChunk *chunk,
-    Expression exp,
-    bool scoped
-) {
+static void compile_expression(BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case EXP_LITERAL: {
             uint8_t const_index = add_constant(chunk, exp.data.dval);
@@ -168,33 +149,22 @@ static void compile_expression(
         }
         case EXP_VARIABLE: {
             uint8_t name_index = add_string(chunk, exp.name);
-            if (!scoped) {
-                emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
-            } else {
-                int index = resolve_local(compiler, exp.name);
-                printf("emitting OP_GET_LOCAL with index: %d\n", index);
-                printf("in the locals array are: ");
-                for (int i = 0; i < compiler->locals_count; i++) {
-                    printf("%s, ", compiler->locals[i]);
-                }
-                printf("\n");
-                emit_bytes(chunk, 2, OP_GET_LOCAL, index);
-            }
+            emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             break;
         }
         case EXP_UNARY: {
-            compile_expression(compiler, chunk, *exp.data.exp, scoped);
+            compile_expression(chunk, *exp.data.exp);
             emit_byte(chunk, OP_NEGATE);
             break;
         }
         case EXP_BINARY: {
-            compile_expression(compiler, chunk, exp.data.binexp->lhs, scoped);
-            compile_expression(compiler, chunk, exp.data.binexp->rhs, scoped);
+            compile_expression(chunk, exp.data.binexp->lhs);
+            compile_expression(chunk, exp.data.binexp->rhs);
 
             if (strcmp(exp.operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
             } else if (strcmp(exp.operator, "-") == 0) {
-                emit_byte(chunk, OP_SUB);                
+                emit_byte(chunk, OP_SUB);
             } else if (strcmp(exp.operator, "*") == 0) {
                 emit_byte(chunk, OP_MUL);
             } else if (strcmp(exp.operator, "/") == 0) {
@@ -211,16 +181,8 @@ static void compile_expression(
                 emit_byte(chunk, OP_EQ);
             } else if (strcmp(exp.operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
-            }
+            } 
 
-            break;
-        }
-        case EXP_CALL: {
-            for (size_t i = 0; i < exp.arguments.count; ++i) {
-                compile_expression(compiler, chunk, exp.arguments.data[i], scoped);
-            }
-            uint8_t funcname_index = add_string(chunk, exp.name);
-            emit_bytes(chunk, 2, OP_INVOKE, funcname_index);
             break;
         }
         default: assert(0);
@@ -229,189 +191,77 @@ static void compile_expression(
 
 #ifdef venom_debug
 void disassemble(BytecodeChunk *chunk) {
-    int i = 0;
     for (
-        uint8_t *ip = chunk->code.data;    
+        uint8_t *ip = chunk->code.data;
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
-        ip++, ++i
+        ip++
     ) {
         switch (*ip) {
             case OP_CONST: {
                 uint8_t const_index = *++ip;
-                printf("%d: ", i);
-                printf("OP_CONST, byte (idx: %d): (val: '%f')\n", const_index, chunk->cp[const_index]);
-                ++i;
+                printf("OP_CONST @ ");
+                printf("%d ", chunk->code.data[const_index]);
+                printf("('%.2f')\n", chunk->cp[const_index]);
                 break;
             }
             case OP_STR_CONST: {
                 uint8_t name_index = *++ip;
-                printf("%d: ", i);
-                printf("OP_STR_CONST, byte (idx: %d): (val: '%s')\n", name_index, chunk->sp[name_index]);
-                ++i;
+                printf("OP_STR_CONST @ ");
+                printf("%d ", chunk->code.data[name_index]);
+                printf("('%s')\n", chunk->sp[name_index]);
                 break;
             }
             case OP_GET_GLOBAL: {
-                printf("%d: ", i);
-                printf("OP_GET_GLOBAL + byte\n");
-                ++ip;
-                ++i;
-                break;
-            }
-            case OP_GET_LOCAL: {
-                uint8_t name_index = *++ip;
-                printf("%d: ", i);
-                printf("OP_GET_LOCAL, byte (%d): ('%s')\n", name_index, chunk->sp[name_index]);
-                ++i;
-                break;
-            }
-            case OP_SET_LOCAL: {
                 uint8_t index = *++ip;
-                printf("%d: ", i);
-                printf("OP_SET_LOCAL, byte (%d)\n", index);
-                ++i;
+                printf("OP_GET_GLOBAL @ ");
+                printf("%d\n", chunk->code.data[index]);
                 break;
             }
-            case OP_SET_GLOBAL: {
-                printf("%d: ", i);
-                printf("OP_SET_GLOBAL\n");
-                break;
-            }
-            case OP_ADD: {
-                printf("%d: ", i);
-                printf("OP_ADD\n");
-                break;
-            }
-            case OP_SUB: {
-                printf("%d: ", i);
-                printf("OP_SUB\n");
-                break;
-            }
-            case OP_MUL: {
-                printf("%d: ", i);
-                printf("OP_MUL\n");
-                break;
-            }
-            case OP_DIV: {
-                printf("%d: ", i);
-                printf("OP_DIV\n");
-                break;
-            }
-            case OP_EQ: {
-                printf("%d: ", i);
-                printf("OP_EQ\n");
-                break;
-            }
-            case OP_GT: {
-                printf("%d: ", i);
-                printf("OP_GT\n");
-                break;
-            }
-            case OP_LT: {
-                printf("%d: ", i);
-                printf("OP_LT\n");
-                break;
-            }
+            case OP_SET_GLOBAL: printf("OP_SET_GLOBAL\n"); break;
+            case OP_ADD: printf("OP_ADD\n"); break;
+            case OP_SUB: printf("OP_SUB\n"); break;
+            case OP_MUL: printf("OP_MUL\n"); break;
+            case OP_DIV: printf("OP_DIV\n"); break;
+            case OP_EQ: printf("OP_EQ\n"); break;
+            case OP_GT: printf("OP_GT\n"); break;
+            case OP_LT: printf("OP_LT\n"); break;
             case OP_JZ: {
-                printf("%d: ", i);
-                int16_t offset = *++ip;
-                offset <<= 8;
-                offset |= *++ip;
-                printf("OP_JZ, byte, byte (offset: '%d')\n", offset);
-                i += 2;
+                printf("OP_JZ\n");
+                ip += 2;
                 break;
             }
             case OP_JMP: {
-                printf("%d: ", i);
-                int16_t offset = *++ip;
-                offset <<= 8;
-                offset |= *++ip;
-                printf("OP_JMP, byte, byte (offset: '%d')\n", offset);
-                i += 2;
+                printf("OP_JMP\n");
+                ip += 2;
                 break;
             }
-            case OP_FUNC: {
-                printf("%d: ", i);
-                printf("OP_FUNC ");
-                uint8_t funcname_index = *++ip;
-                printf(", byte (name: '%d' (%s)')", funcname_index, chunk->sp[funcname_index]);
-                uint8_t paramcount = *++ip;
-                printf(", byte (paramcount: '%d')", paramcount);
-                for (; i < paramcount; ++i) {
-                    uint8_t paramname_index = *++ip;
-                    printf(", byte (param: '%d' (%s)')", paramname_index, chunk->sp[paramname_index]);
-                }
-                uint8_t location = *++ip;
-                printf(", byte (location: '%d')\n", location);
-                i += 2 + paramcount;
-                break;
-            }
-            case OP_INVOKE: {
-                uint8_t funcname_index = *++ip;
-                char *funcname = chunk->sp[funcname_index];
-                printf("%d: ", i);
-                printf("OP_INVOKE, byte (funcname_index: '%d' ('%s')\n", funcname_index, funcname);
-                ++i;
-                break;
-            }
-            case OP_RET: {
-                printf("%d: ", i);
-                printf("OP_RET\n");
-                break;
-            }
-            case OP_NOT: {
-                printf("%d: ", i);
-                printf("OP_NOT\n");
-                break;
-            }
-            case OP_NEGATE: {
-                printf("%d: ", i);
-                printf("OP_NEGATE\n");
-                break;
-            }
-            case OP_PRINT: {
-                printf("%d: ", i);
-                printf("OP_PRINT\n"); 
-                break;
-            }
-            case OP_POP: {
-                printf("%d: ", i);
-                printf("OP_POP\n");
-                break;
-            }
-            case OP_DEEP_SET: {
-                uint8_t index = *++ip;
-                printf("%d: ", i);
-                printf("OP_DEEP_SET, byte (%d)\n", index);
-                ++i;
-                break;
-            }
-            default: printf("Unknown instruction: %d.\n", *ip); break;
+            case OP_NOT: printf("OP_NOT\n"); break;
+            case OP_NEGATE: printf("OP_NEGATE\n"); break;
+            case OP_PRINT: printf("OP_PRINT\n"); break;
+            default: printf("Unknown instruction.\n"); break;
         }
     }
 }
 #endif
 
-void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
+void compile(BytecodeChunk *chunk, Statement stmt) {
     switch (stmt.kind) {
         case STMT_PRINT: {
-            compile_expression(compiler, chunk, stmt.exp, scoped);
-            emit_byte(chunk, OP_PRINT);        
+            compile_expression(chunk, stmt.exp);
+            emit_byte(chunk, OP_PRINT);
             break;
         }
         case STMT_LET:
         case STMT_ASSIGN: {
-            compile_expression(compiler, chunk, stmt.exp, scoped);
-            if (!scoped) {
-                emit_byte(chunk, OP_SET_GLOBAL);
-            } else {
-                int index = resolve_local(compiler, stmt.name);
-                emit_bytes(chunk, 2, OP_SET_LOCAL, index);
-            }
+            uint8_t name_index = add_string(chunk, stmt.name);
+            emit_bytes(chunk, 2, OP_STR_CONST, name_index);
+            compile_expression(chunk, stmt.exp);
+            emit_byte(chunk, OP_SET_GLOBAL);
             break;
         }
         case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                compile(compiler, chunk, stmt.stmts.data[i], scoped);
+            for (int i = 0; i < stmt.stmts.count; ++i) {
+                compile(chunk, stmt.stmts.data[i]);
             }
             break;
         }
@@ -420,7 +270,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(chunk, stmt.exp);
  
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -430,25 +280,24 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * after we compile the 'then' branch because at that point the
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
-            
-            compile(compiler, chunk, *stmt.then_branch, scoped);
+            compile(chunk, *stmt.then_branch);
 
+            /* Then, we emit OP_JMP, patch the 'then' jump,
+             * and compile the 'else' branch. */
             int else_jump = emit_jump(chunk, OP_JMP);
-
-            /* Then, we patch the 'then' jump. */
             patch_jump(chunk, then_jump);
 
             if (stmt.else_branch != NULL) {
-                compile(compiler, chunk, *stmt.else_branch, scoped);
+                compile(chunk, *stmt.else_branch);
             }
 
             /* Finally, we patch the 'else' jump. If the 'else' branch
-            + wasn't compiled, the offset should be zeroed out. */
+             + wasn't compiled, the offset should be zeroed out. */
             patch_jump(chunk, else_jump);
 
             break;
         }
-        case STMT_WHILE: {    
+        case STMT_WHILE: {
             /* We need to mark the beginning of the loop before we compile
              * the conditional expression, so that we can emit OP_LOOP later. */
             int loop_start = chunk->code.count;
@@ -457,7 +306,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(chunk, stmt.exp);
             
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -467,8 +316,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * be known only after we compile the body of the 'while' loop,
              * because at that point its size is known. */ 
             int exit_jump = emit_jump(chunk, OP_JZ);
-            
-            compile(compiler, chunk, *stmt.body, scoped);
+            compile(chunk, *stmt.body);
 
             /* Then, we emit OP_JMP with a negative offset. */
             emit_loop(chunk, loop_start);
@@ -476,45 +324,6 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             /* Finally, we patch the jump. */
             patch_jump(chunk, exit_jump);
 
-            break;
-        }
-        case STMT_FN: {           
-            emit_byte(chunk, OP_FUNC);
-
-            /* Emit function name. */
-            uint8_t name_index = add_string(chunk, stmt.name);
-            emit_byte(chunk, name_index);
-
-            /* Emit parameter count. */
-            emit_byte(chunk, (uint8_t)stmt.parameters.count);
-
-            /* Emit parameter names. */
-            for (size_t i = 0; i < stmt.parameters.count; ++i) {
-                uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
-                compiler->locals[compiler->locals_count++] = chunk->sp[parameter_index];
-                emit_byte(chunk, parameter_index);
-            }
-           
-            /* Emit the location of the start of the function. */
-            emit_byte(chunk, (uint8_t)chunk->code.count + 4);
-
-            table_insert(&compiler->functions, stmt.name, (Object){ .type = OBJ_NUMBER, .as.dval = chunk->code.count + 3});
-            
-            int jump = emit_jump(chunk, OP_JMP);
-
-            compiler->paramcount = stmt.parameters.count;
-
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
-                compile(compiler, chunk, stmt.stmts.data[i], true);
-            }
-
-            patch_jump(chunk, jump);
-
-            break;
-        }
-        case STMT_RETURN: { 
-            compile_expression(compiler, chunk, stmt.exp, scoped);
-            emit_byte(chunk, OP_RET);
             break;
         }
         default: assert(0);

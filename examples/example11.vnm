@@ -1,9 +1,0 @@
-fn spam(x, y) {
-    if (x < 1) {
-        return spam(x+1, 5);
-    } else {
-        return 3;
-    }
-}
-
-print spam(0, 5);

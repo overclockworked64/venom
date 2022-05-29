@@ -35,6 +35,45 @@ static char *read_file(const char *path) {
     return buffer;
 }
 
+void repl() {
+    VM vm;
+    init_vm(&vm);
+
+    for (;;) {
+        size_t len = 0;
+        char *line = NULL;
+
+        printf("> ");
+
+        if (getline(&line, &len, stdin) == EOF) {
+            free(line);
+            break; 
+        }
+
+        Tokenizer tokenizer;
+        init_tokenizer(&tokenizer, line);
+
+        Statement_DynArray stmts = {0};
+        Parser parser;
+        parse(&parser, &tokenizer, &stmts);
+
+        if (parser.had_error) continue;
+        
+        BytecodeChunk chunk;
+        init_chunk(&chunk);
+        for (int i = 0; i < stmts.count; i++) {
+            compile(&chunk, stmts.data[i]);
+            free_stmt(stmts.data[i]);
+        }
+        run(&vm, &chunk);
+
+        dynarray_free(&stmts);
+        free_chunk(&chunk);
+        free(line);
+    }
+    free_vm(&vm);
+}
+
 void run_file(char *file) {
     char *source = read_file(file);
 
@@ -44,19 +83,17 @@ void run_file(char *file) {
     init_tokenizer(&tokenizer, source);
     parse(&parser, &tokenizer, &stmts);
 
-    Compiler compiler;
-    init_compiler(&compiler);
     BytecodeChunk chunk;
     init_chunk(&chunk);
 
-    for (size_t i = 0; i < stmts.count; i++) {
-        compile(&compiler, &chunk, stmts.data[i], false);
+    for (int i = 0; i < stmts.count; i++) {
+        compile(&chunk, stmts.data[i]);
         free_stmt(stmts.data[i]);
     }
 
     VM vm;
     init_vm(&vm);
-    run(&vm, &compiler, &chunk);
+    run(&vm, &chunk);
 
     dynarray_free(&stmts);
     free_chunk(&chunk);
@@ -65,6 +102,7 @@ void run_file(char *file) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 2) run_file(argv[1]);
+    if (argc == 1) repl();
+    else if (argc == 2) run_file(argv[1]);
     else printf("Usage: venom [file]\n");
 }
