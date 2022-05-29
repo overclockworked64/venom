@@ -175,8 +175,10 @@ do { \
                 break;
             }
             case OP_SET_LOCAL: {
+                printf("fp is: %d\n", vm->fp);
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);
+                vm->stack[vm->fp + index] = obj;
                 break;
             }
             case OP_GET_LOCAL: {
