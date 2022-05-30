@@ -172,12 +172,6 @@ static void compile_expression(
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
                 int index = resolve_local(compiler, exp.name);
-                printf("emitting OP_DEEP_GET with index: %d\n", index);
-                printf("in the locals array are: ");
-                for (int i = 0; i < compiler->locals_count; i++) {
-                    printf("%s, ", compiler->locals[i]);
-                }
-                printf("\n");
                 emit_bytes(chunk, 2, OP_DEEP_GET, index);
             }
             break;
