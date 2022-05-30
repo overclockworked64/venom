@@ -220,7 +220,7 @@ static void compile_expression(
                 compile_expression(compiler, chunk, exp.arguments.data[i], scoped);
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
-            emit_bytes(chunk, 2, OP_INVOKE, funcname_index);
+            emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.arguments.count);
             break;
         }
         default: assert(0);
@@ -350,7 +350,9 @@ void disassemble(BytecodeChunk *chunk) {
                 char *funcname = chunk->sp[funcname_index];
                 printf("%d: ", i);
                 printf("OP_INVOKE, byte (funcname_index: '%d' ('%s')\n", funcname_index, funcname);
-                ++i;
+                uint8_t argcount = *++ip;
+                printf(", byte (paramcount: '%d')", argcount);
+                i += 2;
                 break;
             }
             case OP_RET: {

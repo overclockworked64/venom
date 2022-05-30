@@ -251,10 +251,11 @@ do { \
             case OP_INVOKE: {
                 /* We first read the index of the function name. */
                 uint8_t funcname = READ_UINT8();
+                uint8_t argcount = READ_UINT8();
 
                 /* Then, we look it up from the globals table. */ 
-                Object *value = table_get(&vm->globals, chunk->sp[funcname]);
-                if (value == NULL) {
+                Object *funcobj = table_get(&vm->globals, chunk->sp[funcname]);
+                if (funcobj == NULL) {
                     /* Runtime error if the function is not defined. */
                     char msg[512];
                     snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[funcname]);
@@ -262,16 +263,27 @@ do { \
                     return;
                 }
 
-                vm->argcount = value->as.func.paramcount;
+                if (argcount != funcobj->as.func.paramcount) {
+                    char msg[512];
+                    snprintf(
+                        msg, sizeof(msg),
+                        "Function '%s' requires '%d' arguments.",
+                        chunk->sp[funcname], argcount
+                    );
+                    runtime_error(msg);
+                    return;
+                }
+
+                vm->argcount = argcount;
 
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
                 
-                vm->fp = vm->tos - (1 + vm->argcount);
+                vm->fp = vm->tos - (1 + argcount);
                 
                 /* We modify ip so that it points to one instruction
                  * just before the code we're invoking. */
-                ip = &chunk->code.data[value->as.func.location-1];
+                ip = &chunk->code.data[funcobj->as.func.location-1];
 
                 break;
             }
