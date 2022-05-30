@@ -319,5 +319,6 @@ do { \
 #endif
     }
 #undef BINARY_OP
+#undef READ_UINT8
 #undef READ_INT16
 }
