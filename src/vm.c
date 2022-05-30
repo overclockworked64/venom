@@ -29,7 +29,7 @@ static Object pop(VM *vm) {
 }
 
 void run(VM *vm, Compiler *compiler, BytecodeChunk *chunk) {
-#define BINARY_OP(vm, op, wrapper) \
+#define BINARY_OP(op, wrapper) \
 do { \
     /* operands are already on the stack */ \
     Object b = pop(vm); \
@@ -181,13 +181,13 @@ do { \
                 push(vm, vm->stack[vm->fp + index]);
                 break;
             }
-            case OP_ADD: BINARY_OP(vm, +, AS_NUM); break;
-            case OP_SUB: BINARY_OP(vm, -, AS_NUM); break;
-            case OP_MUL: BINARY_OP(vm, *, AS_NUM); break;
-            case OP_DIV: BINARY_OP(vm, /, AS_NUM); break;
-            case OP_GT: BINARY_OP(vm, >, AS_BOOL); break;
-            case OP_LT: BINARY_OP(vm, <, AS_BOOL); break;
-            case OP_EQ: BINARY_OP(vm, ==, AS_BOOL); break;
+            case OP_ADD: BINARY_OP(+, AS_NUM); break;
+            case OP_SUB: BINARY_OP(-, AS_NUM); break;
+            case OP_MUL: BINARY_OP(*, AS_NUM); break;
+            case OP_DIV: BINARY_OP(/, AS_NUM); break;
+            case OP_GT: BINARY_OP(>, AS_BOOL); break;
+            case OP_LT: BINARY_OP(<, AS_BOOL); break;
+            case OP_EQ: BINARY_OP(==, AS_BOOL); break;
             case OP_JZ: {
                 /* Jump if zero. */
                 int16_t offset = READ_INT16(0);
