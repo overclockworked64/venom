@@ -12,6 +12,7 @@ typedef enum {
     EXP_UNARY,
     EXP_BINARY,
     EXP_CALL,
+    EXP_ASSIGN,
 } ExpressionKind;
 
 typedef struct BinaryExpression BinaryExpression;

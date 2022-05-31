@@ -143,9 +143,9 @@ do { \
                  * and the value of the double constant that the name
                  * refers to. We pop these two and add the variable
                  * to the globals table. */
+                uint8_t name_index = READ_UINT8();
                 Object constant = pop(vm);
-                Object name_index = pop(vm);
-                table_insert(&vm->globals, chunk->sp[(int)NUM_VAL(name_index)], constant);
+                table_insert(&vm->globals, chunk->sp[name_index], constant);
                 break;
             }
             case OP_CONST: {

@@ -153,6 +153,14 @@ static int resolve_local(Compiler *compiler, char *name) {
     return -1;
 }
 
+static int resolve_str_const(BytecodeChunk *chunk, char *name) {
+    for (int i = 0; i < chunk->sp_count; i++) {
+        if (strcmp(chunk->sp[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 static void compile_expression(
     Compiler *compiler,
@@ -217,6 +225,17 @@ static void compile_expression(
             emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.arguments.count);
             break;
         }
+        case EXP_ASSIGN: {
+            uint8_t name_index = add_string(chunk, exp.data.binexp->lhs.name);
+            compile_expression(compiler, chunk, exp.data.binexp->rhs, scoped);
+            if (!scoped) {
+                emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
+            } else {
+                int index = resolve_local(compiler, exp.data.binexp->lhs.name);
+                emit_bytes(chunk, 2, OP_DEEP_SET, index);
+            }
+            break;
+        }
         default: assert(0);
     }
 }
@@ -268,6 +287,8 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_SET_GLOBAL: {
                 printf("%d: ", i);
                 printf("OP_SET_GLOBAL\n");
+                ++i;
+                ++ip;
                 break;
             }
             case OP_ADD: {
@@ -393,9 +414,10 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             break;
         }
         case STMT_LET: {
+            uint8_t name_index = add_string(chunk, stmt.name);
             compile_expression(compiler, chunk, stmt.exp, scoped);
             if (!scoped) {
-                emit_byte(chunk, OP_SET_GLOBAL);
+                emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             } else {
                 int index = resolve_local(compiler, stmt.name);
                 emit_bytes(chunk, 2, OP_DEEP_SET, index);

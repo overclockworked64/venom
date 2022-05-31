@@ -251,8 +251,23 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
     return expr;
 }
 
+static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = equality(parser, tokenizer);
+    if (match(parser, tokenizer, 2, TOKEN_EQUAL)) {
+        Expression right = assignment(parser, tokenizer);
+        Expression result = { 
+            .kind = EXP_ASSIGN,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+        };
+        result.data.binexp->lhs = expr;
+        result.data.binexp->rhs = right;
+        return result;
+    }
+    return expr;
+}
+
 static Expression expression(Parser *parser, Tokenizer *tokenizer) {
-    return equality(parser, tokenizer);
+    return assignment(parser, tokenizer);
 }
 
 static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
