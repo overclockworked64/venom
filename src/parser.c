@@ -13,8 +13,7 @@
 
 void free_stmt(Statement stmt) {
     switch (stmt.kind) {
-        case STMT_LET:
-        case STMT_ASSIGN: {
+        case STMT_LET: {
             free(stmt.name);
             break;
         }
@@ -381,27 +380,16 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
     };
 }
 
-static Statement assign_statement(Parser *parser, Tokenizer *tokenizer) {
-    char *identifier = own_string_n(parser->previous.start, parser->previous.length);
-
-    consume(
-        parser, tokenizer,
-        TOKEN_EQUAL,
-        "Expected '=' after the identifier."
-    );
-
-    Expression initializer = expression(parser, tokenizer);
-
+static Statement expression_statement(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = expression(parser, tokenizer);
     consume(
         parser, tokenizer,
         TOKEN_SEMICOLON,
-        "Expected ';' at the end of the statement."
+        "Expected ';' after expression"
     );
-
     return (Statement){
-        .kind = STMT_ASSIGN,
-        .name = identifier,
-        .exp = initializer
+        .kind = STMT_EXPR,
+        .exp = expr,
     };
 }
 
@@ -524,8 +512,6 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
         return print_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LET)) {
         return let_statement(parser, tokenizer);
-    } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
-        return assign_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_BRACE)) {
         return (Statement){ .kind = STMT_BLOCK, .stmts = block(parser, tokenizer) };
     } else if (match(parser, tokenizer, 1, TOKEN_IF)) {
@@ -537,7 +523,7 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     } else if (match(parser, tokenizer, 1, TOKEN_RETURN)) {
         return return_statement(parser, tokenizer);
     } else {
-        assert(0);
+        return expression_statement(parser, tokenizer);
     }
 }
 

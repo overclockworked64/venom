@@ -354,6 +354,11 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_RET\n");
                 break;
             }
+            case OP_RET_VOID: {
+                printf("%d: ", i);
+                printf("OP_RET_VOID\n");
+                break;
+            }
             case OP_NOT: {
                 printf("%d: ", i);
                 printf("OP_NOT\n");
@@ -387,8 +392,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             emit_byte(chunk, OP_PRINT);        
             break;
         }
-        case STMT_LET:
-        case STMT_ASSIGN: {
+        case STMT_LET: {
             compile_expression(compiler, chunk, stmt.exp, scoped);
             if (!scoped) {
                 emit_byte(chunk, OP_SET_GLOBAL);
@@ -396,6 +400,10 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
                 int index = resolve_local(compiler, stmt.name);
                 emit_bytes(chunk, 2, OP_DEEP_SET, index);
             }
+            break;
+        }
+        case STMT_EXPR: {
+            compile_expression(compiler, chunk, stmt.exp, scoped);
             break;
         }
         case STMT_BLOCK: {
@@ -493,8 +501,16 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
 
             compiler->paramcount = stmt.parameters.count;
 
+            bool has_return = false;
             for (size_t i = 0; i < stmt.stmts.count; ++i) {
+                if (stmt.stmts.data[i].kind == STMT_RETURN) {
+                    has_return = true;
+                }
                 compile(compiler, chunk, stmt.stmts.data[i], true);
+            }
+
+            if (!has_return) {
+                emit_byte(chunk, OP_RET_VOID);
             }
 
             patch_jump(chunk, jump);

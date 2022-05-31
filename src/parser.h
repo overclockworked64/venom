@@ -39,7 +39,7 @@ typedef struct BinaryExpression {
 
 typedef enum {
     STMT_LET,
-    STMT_ASSIGN,
+    STMT_EXPR,
     STMT_PRINT,
     STMT_BLOCK,
     STMT_IF,
