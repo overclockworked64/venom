@@ -25,6 +25,4 @@ do { \
 
 typedef DynArray(int) IntDynArray;
 
-int dynarray_get(IntDynArray array, int index);
-
 #endif
