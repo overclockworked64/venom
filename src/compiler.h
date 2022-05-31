@@ -46,7 +46,6 @@ typedef struct BytecodeChunk {
 } BytecodeChunk;
 
 typedef struct {
-    Uint8DynArray stack_sizes;
     int paramcount;
     Table functions;
     char *locals[256];
