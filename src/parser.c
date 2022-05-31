@@ -267,17 +267,14 @@ static Expression grouping(Parser *parser, Tokenizer *tokenizer) {
 
 static Statement_DynArray block(Parser *parser, Tokenizer *tokenizer) {
     Statement_DynArray stmts = {0};
-
     while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         dynarray_insert(&stmts, statement(parser, tokenizer));
     }
-
     consume(
         parser, tokenizer,
         TOKEN_RIGHT_BRACE,
         "Expected '}' at the end of the block."
     );
-
     return stmts;
 }
 
@@ -329,18 +326,15 @@ static void print_expression(Expression e) {
 
 static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
     Expression exp = expression(parser, tokenizer);
-
 #ifdef venom_debug
     print_expression(exp);
     printf("\n");
 #endif
-
     consume(
         parser, tokenizer,
         TOKEN_SEMICOLON,
         "Expected semicolon at the end of the expression."
     );
-
     return (Statement){
         .kind = STMT_PRINT,
         .exp = exp,
@@ -354,25 +348,20 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_IDENTIFIER,
         "Expected identifier after 'let'."
     );
-
     char *name = own_string_n(identifier.start, identifier.length);
-  
     Expression initializer;
     if (match(parser, tokenizer, 1, TOKEN_EQUAL)) {
         initializer = expression(parser, tokenizer);
     }
-
 #ifdef venom_debug
     print_expression(initializer);
     printf("\n");
 #endif
-
     consume(
         parser, tokenizer,
         TOKEN_SEMICOLON,
         "Expected semicolon at the end of the statement."
     );
-
     return (Statement){
         .kind = STMT_LET,
         .name = name,
@@ -399,9 +388,7 @@ static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_LEFT_PAREN,
         "Expected '(' after if."
     );
-
     Expression condition = expression(parser, tokenizer);
-
     consume(
         parser, tokenizer,
         TOKEN_RIGHT_PAREN,
@@ -432,22 +419,18 @@ static Statement while_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_LEFT_PAREN,
         "Expected '(' after while."
     );
-    
     Expression condition = expression(parser, tokenizer);
-    
     consume(
         parser, tokenizer,
         TOKEN_RIGHT_PAREN,
         "Expected ')' after condition."
     );
-
     Statement stmt = {
         .kind = STMT_WHILE,
         .exp = condition,
         .body = malloc(sizeof(Statement)),
     };
     *stmt.body = statement(parser, tokenizer);
-
     return stmt;
  }
 
