@@ -153,15 +153,6 @@ static int resolve_local(Compiler *compiler, char *name) {
     return -1;
 }
 
-static int resolve_str_const(BytecodeChunk *chunk, char *name) {
-    for (int i = 0; i < chunk->sp_count; i++) {
-        if (strcmp(chunk->sp[i], name) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 static void compile_expression(
     Compiler *compiler,
     BytecodeChunk *chunk,
