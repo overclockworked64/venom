@@ -222,7 +222,6 @@ do { \
                  * their indices in the string constant pool. */
                 for (int i = 0; i < paramcount; ++i) {
                     uint8_t name_index = READ_UINT8();
-                    dynarray_insert(&vm->locals, (Object){ .name = chunk->sp[name_index] });
                 }
 
                 /* After the parameters, there are 3 more bytes.
