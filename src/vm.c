@@ -124,14 +124,14 @@ do { \
                  * on the stack. If we can't find the variable,
                  * we bail out. */
                 uint8_t name_index = READ_UINT8();
-                Object *value = table_get(&vm->globals, chunk->sp[name_index]);
-                if (value == NULL) {
+                Object *obj = table_get(&vm->globals, chunk->sp[name_index]);
+                if (obj == NULL) {
                     char msg[512];
                     snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[name_index]);
                     runtime_error(msg);
                     return;
                 }
-                push(vm, *value);
+                push(vm, *obj);
                 break;
             }
             case OP_SET_GLOBAL: {
