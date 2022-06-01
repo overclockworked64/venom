@@ -506,7 +506,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             }
            
             /* Emit the location of the start of the function. */
-            emit_byte(chunk, (uint8_t)chunk->code.count + 4);
+            emit_byte(chunk, (uint8_t)(chunk->code.count + 4));
 
             table_insert(&compiler->functions, stmt.name, (Object){ .type = OBJ_NUMBER, .as.dval = chunk->code.count + 3});
             
