@@ -98,7 +98,6 @@ do { \
                 printf("OP_DEEP_GET: %d", ip[1]);
                 break;
             }
-            case OP_POP: printf("OP_POP"); break;
             case OP_EXIT: printf("OP_EXIT"); break;
         }
         printf("\n");
@@ -314,7 +313,6 @@ do { \
                 break;
 
             }
-            case OP_POP: pop(vm); break;
             case OP_EXIT: return;
             default: break;
         }

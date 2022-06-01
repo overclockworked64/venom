@@ -379,7 +379,7 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_PRINT\n"); 
                 break;
             }
-            case OP_POP: {
+            case OP_NULL: {
                 printf("%d: ", i);
                 printf("OP_POP\n");
                 break;
