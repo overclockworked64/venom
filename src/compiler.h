@@ -27,7 +27,7 @@ typedef enum {
     OP_RET,
     OP_RET_VOID,
     OP_CONST,
-    OP_STR_CONST,
+    OP_NULL,
     OP_SET_GLOBAL,
     OP_GET_GLOBAL,
     OP_DEEP_SET,

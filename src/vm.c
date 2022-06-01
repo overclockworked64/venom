@@ -88,7 +88,6 @@ do { \
             case OP_RET: printf("OP_RET"); break;
             case OP_RET_VOID: printf("OP_RET_VOID"); break;
             case OP_CONST: printf("OP_CONST"); break;
-            case OP_STR_CONST: printf("OP_STR_CONST"); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
             case OP_DEEP_SET: {
@@ -157,18 +156,8 @@ do { \
                  * the constant in the constant pool that comes
                  * after the opcode, and push the constant on
                  * the stack. */
-                push(vm, AS_NUM(chunk->cp[READ_UINT8()]));
-                break;
-            }
-            case OP_STR_CONST: {
-                /* At this point, ip points to OP_STR_CONST.
-                 * Since this is a 2-byte instruction with an
-                 * immediate operand (the index of the string
-                 * constant in the string constant pool), we
-                 * want to increment the ip so it points to
-                 * what comes after the opcode, and push the
-                 * /index/ of the string constant on the stack. */
-                push(vm, AS_NUM(READ_UINT8()));
+                uint8_t index = READ_UINT8();
+                push(vm, AS_NUM(chunk->cp[index]));
                 break;
             }
             case OP_DEEP_SET: {
