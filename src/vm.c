@@ -291,11 +291,7 @@ do { \
                     pop(vm);
                 }
 
-                if (!IS_NULL(&returnvalue)) {
-                    /* Then, we put the return value back on
-                     * the stack, provided that it's not null. */
-                    push(vm, returnvalue);
-                }
+                push(vm, returnvalue);
 
                 /* After that, we update the frame pointer. */
                 vm->fp = vm->tos - (vm->argcount + 2);
