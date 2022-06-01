@@ -286,13 +286,16 @@ do { \
                 Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
+                /* Clean up the stack. */
                 for (int i = 0; i < vm->argcount; i++) {
                     pop(vm);
                 }
 
-                /* Then, we put the return value back on the stack. */
-
-                push(vm, returnvalue);
+                if (!IS_NULL(&returnvalue)) {
+                    /* Then, we put the return value back on
+                     * the stack, provided that it's not null. */
+                    push(vm, returnvalue);
+                }
 
                 /* After that, we update the frame pointer. */
                 vm->fp = vm->tos - (vm->argcount + 2);
@@ -305,7 +308,6 @@ do { \
             case OP_NULL: {
                 push(vm, (Object){ .type = OBJ_NULL });
                 break;
-
             }
             case OP_EXIT: return;
             default: break;
