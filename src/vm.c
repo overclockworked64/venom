@@ -189,12 +189,14 @@ do { \
                 ip += offset;
                 break;
             }
-            case OP_NEGATE: { 
-                push(vm, AS_NUM(-NUM_VAL(pop(vm))));
+            case OP_NEGATE: {
+                Object obj = pop(vm);
+                push(vm, AS_NUM(-NUM_VAL(obj)));
                 break;
             }
             case OP_NOT: {
-                push(vm, AS_BOOL(BOOL_VAL(pop(vm)) ^ 1));
+                Object obj = pop(vm);
+                push(vm, AS_BOOL(BOOL_VAL(obj) ^ 1));
                 break;
             }
             case OP_FUNC: {
