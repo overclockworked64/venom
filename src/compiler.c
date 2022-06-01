@@ -359,11 +359,6 @@ void disassemble(BytecodeChunk *chunk) {
                 printf("OP_RET\n");
                 break;
             }
-            case OP_RET_VOID: {
-                printf("%d: ", i);
-                printf("OP_RET_VOID\n");
-                break;
-            }
             case OP_NOT: {
                 printf("%d: ", i);
                 printf("OP_NOT\n");
@@ -381,7 +376,7 @@ void disassemble(BytecodeChunk *chunk) {
             }
             case OP_NULL: {
                 printf("%d: ", i);
-                printf("OP_POP\n");
+                printf("OP_NULL\n");
                 break;
             }
             default: printf("Unknown instruction: %d.\n", *ip); break;
@@ -516,7 +511,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             }
 
             if (!has_return) {
-                emit_byte(chunk, OP_RET_VOID);
+                emit_bytes(chunk, 2, OP_NULL, OP_RET);
             }
 
             patch_jump(chunk, jump);

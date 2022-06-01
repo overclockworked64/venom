@@ -10,6 +10,7 @@ typedef enum {
     OBJ_BOOLEAN,
     OBJ_FUNCTION,
     OBJ_POINTER,
+    OBJ_NULL,
 } ObjectType;
 
 typedef struct Object Object;
@@ -38,6 +39,7 @@ typedef DynArray(char *) String_DynArray;
 #define IS_NUM(object) ((object)->type == OBJ_NUMBER)
 #define IS_FUNC(object) ((object)->type == OBJ_FUNCTION)
 #define IS_POINTER(object) ((object)->type == OBJ_POINTER)
+#define IS_NULL(object) ((object)->type == OBJ_NULL)
 
 #define AS_NUM(thing) ((Object){ .type = OBJ_NUMBER, .as.dval = (thing) })
 #define AS_BOOL(thing) ((Object){ .type = OBJ_BOOLEAN, .as.bval = (thing) })

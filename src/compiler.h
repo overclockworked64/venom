@@ -25,7 +25,6 @@ typedef enum {
     OP_FUNC,
     OP_INVOKE,
     OP_RET,
-    OP_RET_VOID,
     OP_CONST,
     OP_NULL,
     OP_SET_GLOBAL,

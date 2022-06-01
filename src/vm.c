@@ -86,7 +86,6 @@ do { \
             case OP_FUNC: printf("OP_FUNC"); break;
             case OP_INVOKE: printf("OP_INVOKE"); break;
             case OP_RET: printf("OP_RET"); break;
-            case OP_RET_VOID: printf("OP_RET_VOID"); break;
             case OP_CONST: printf("OP_CONST"); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
@@ -298,18 +297,8 @@ do { \
 
                 break;
             }
-            case OP_RET_VOID: {
-                for (int i = 0; i < vm->argcount; i++) {
-                    pop(vm);
-                }
-
-                Object returnaddr = pop(vm);
-
-                vm->fp = vm->tos - (vm->argcount + 2);
-
-                /* Finally, we modify the instruction pointer. */
-                ip = returnaddr.as.ptr;
-
+            case OP_NULL: {
+                push(vm, (Object){ .type = OBJ_NULL });
                 break;
 
             }

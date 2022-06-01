@@ -11,5 +11,7 @@ void print_object(Object *object) {
         printf(" @ %d>", object->as.func.location);   
     } else if IS_POINTER(object) {
         printf("PTR ('%d')", *object->as.ptr);
+    } else if IS_NULL(object) {
+        printf("null");
     }
 }
