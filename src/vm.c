@@ -268,6 +268,7 @@ do { \
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
                 
+                /* After that, we update the frame pointer. */
                 vm->fp = vm->tos - (1 + argcount);
                 
                 /* We modify ip so that it points to one instruction
@@ -292,6 +293,8 @@ do { \
                 /* Then, we put the return value back on the stack. */
 
                 push(vm, returnvalue);
+
+                /* After that, we update the frame pointer. */
                 vm->fp = vm->tos - (vm->argcount + 2);
 
                 /* Finally, we modify the instruction pointer. */
