@@ -69,6 +69,8 @@ do { \
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
         ip++
     ) {
+
+#ifdef venom_debug
         printf("current instruction: ");
         switch (*ip) {
             case OP_PRINT: printf("OP_PRINT"); break;
@@ -100,6 +102,7 @@ do { \
             case OP_EXIT: printf("OP_EXIT"); break;
         }
         printf("\n");
+#endif
 
         switch (*ip) {  /* instruction pointer */
             case OP_PRINT: {
