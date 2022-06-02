@@ -128,7 +128,11 @@ do { \
                 Object *obj = table_get(&vm->globals, chunk->sp[name_index]);
                 if (obj == NULL) {
                     char msg[512];
-                    snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[name_index]);
+                    snprintf(
+                        msg, sizeof(msg),
+                        "Variable '%s' is not defined",
+                        chunk->sp[name_index]
+                    );
                     runtime_error(msg);
                     return;
                 }
@@ -250,7 +254,11 @@ do { \
                 if (funcobj == NULL) {
                     /* Runtime error if the function is not defined. */
                     char msg[512];
-                    snprintf(msg, sizeof(msg), "Variable '%s' is not defined", chunk->sp[funcname]);
+                    snprintf(
+                        msg, sizeof(msg),
+                        "Variable '%s' is not defined",
+                        chunk->sp[funcname]
+                    );
                     runtime_error(msg);
                     return;
                 }
