@@ -289,11 +289,13 @@ do { \
                 Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
-                /* Clean up the stack. */
+                /* After the return value, there are function
+                 * arguments, so we clean up the stack. */
                 for (int i = 0; i < vm->argcount; i++) {
                     pop(vm);
                 }
 
+                /* We push the return value back on the stack.  */
                 push(vm, returnvalue);
 
                 /* After that, we update the frame pointer. */
