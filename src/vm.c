@@ -285,7 +285,7 @@ do { \
                  * value is located on the stack. Beneath it is
                  * the return address. We need to get the return
                  * address in order to modify ip and return to the
-                 * called. We need to first pop both of them: */
+                 * caller. We need to first pop both of them: */
                 Object returnvalue = pop(vm);
                 Object returnaddr = pop(vm);
 
