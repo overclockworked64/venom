@@ -177,7 +177,6 @@ do { \
             case OP_DEEP_GET: {
                 uint8_t index = READ_UINT8();
                 int fp = vm->fp_stack[vm->fp_count - 1];
-                printf("FP IS: %d\n", fp);
                 push(vm, vm->stack[fp + index]);
                 break;
             }
