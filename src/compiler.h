@@ -53,7 +53,6 @@ typedef struct {
 
 void init_chunk(BytecodeChunk *chunk);
 void free_chunk(BytecodeChunk *chunk);
-void first_pass(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 void init_compiler(Compiler *compiler);

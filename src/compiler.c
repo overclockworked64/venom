@@ -156,8 +156,7 @@ static int resolve_local(Compiler *compiler, char *name) {
 static void compile_expression(
     Compiler *compiler,
     BytecodeChunk *chunk,
-    Expression exp,
-    bool scoped
+    Expression exp
 ) {
     switch (exp.kind) {
         case EXP_LITERAL: {
@@ -166,23 +165,23 @@ static void compile_expression(
             break;
         }
         case EXP_VARIABLE: {
-            uint8_t name_index = add_string(chunk, exp.name);
-            if (!scoped) {
+            int index = resolve_local(compiler, exp.name);
+            if (index == -1) {
+                uint8_t name_index = add_string(chunk, exp.name);
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
-                int index = resolve_local(compiler, exp.name);
                 emit_bytes(chunk, 2, OP_DEEP_GET, index);
             }
             break;
         }
         case EXP_UNARY: {
-            compile_expression(compiler, chunk, *exp.data.exp, scoped);
+            compile_expression(compiler, chunk, *exp.data.exp);
             emit_byte(chunk, OP_NEGATE);
             break;
         }
         case EXP_BINARY: {
-            compile_expression(compiler, chunk, exp.data.binexp->lhs, scoped);
-            compile_expression(compiler, chunk, exp.data.binexp->rhs, scoped);
+            compile_expression(compiler, chunk, exp.data.binexp->lhs);
+            compile_expression(compiler, chunk, exp.data.binexp->rhs);
 
             if (strcmp(exp.operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
@@ -210,20 +209,20 @@ static void compile_expression(
         }
         case EXP_CALL: {
             for (size_t i = 0; i < exp.arguments.count; ++i) {
-                compile_expression(compiler, chunk, exp.arguments.data[i], scoped);
+                compile_expression(compiler, chunk, exp.arguments.data[i]);
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
             emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.arguments.count);
             break;
         }
         case EXP_ASSIGN: {
-            uint8_t name_index = add_string(chunk, exp.data.binexp->lhs.name);
-            compile_expression(compiler, chunk, exp.data.binexp->rhs, scoped);
-            if (!scoped) {
-                emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
-            } else {
-                int index = resolve_local(compiler, exp.data.binexp->lhs.name);
+            compile_expression(compiler, chunk, exp.data.binexp->rhs);
+            int index = resolve_local(compiler, exp.name);
+            if (index != -1) {
                 emit_bytes(chunk, 2, OP_DEEP_SET, index);
+            } else {
+                uint8_t name_index = add_string(chunk, exp.name);
+                emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             }
             break;
         }
@@ -388,23 +387,22 @@ void disassemble(BytecodeChunk *chunk) {
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
     switch (stmt.kind) {
         case STMT_PRINT: {
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp);
             emit_byte(chunk, OP_PRINT);        
             break;
         }
         case STMT_LET: {
+            compile_expression(compiler, chunk, stmt.exp);
             uint8_t name_index = add_string(chunk, stmt.name);
-            compile_expression(compiler, chunk, stmt.exp, scoped);
             if (!scoped) {
                 emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             } else {
-                int index = resolve_local(compiler, stmt.name);
-                emit_bytes(chunk, 2, OP_DEEP_SET, index);
+                compiler->locals[compiler->locals_count++] = chunk->sp[name_index];
             }
             break;
         }
         case STMT_EXPR: {
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp);
             break;
         }
         case STMT_BLOCK: {
@@ -418,7 +416,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp);
  
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -455,7 +453,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+            compile_expression(compiler, chunk, stmt.exp);
             
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -518,8 +516,8 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
 
             break;
         }
-        case STMT_RETURN: { 
-            compile_expression(compiler, chunk, stmt.exp, scoped);
+        case STMT_RETURN: {
+            compile_expression(compiler, chunk, stmt.exp);
             emit_byte(chunk, OP_RET);
             break;
         }

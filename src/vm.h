@@ -13,8 +13,8 @@ typedef struct {
     Object stack[STACK_MAX];
     size_t tos; /* top of stack */
     Table globals;
-    int argcount;
-    int fp; /* frame pointer */
+    int fp_stack[256]; /* a stack for frame pointers */
+    int fp_count;
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;

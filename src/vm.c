@@ -99,6 +99,7 @@ do { \
                 printf("OP_DEEP_GET: %d", ip[1]);
                 break;
             }
+            case OP_NULL: printf("OP_NULL"); break;
             case OP_EXIT: printf("OP_EXIT"); break;
         }
         printf("\n");
@@ -111,6 +112,7 @@ do { \
                 printf("dbg print :: ");
 #endif
                 print_object(&object);
+                printf("\n");
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -168,12 +170,15 @@ do { \
             case OP_DEEP_SET: {
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);
-                vm->stack[vm->fp + index] = obj;
+                int fp = vm->fp_stack[vm->fp_count - 1];
+                vm->stack[fp + index] = obj;
                 break;
             }
             case OP_DEEP_GET: {
                 uint8_t index = READ_UINT8();
-                push(vm, vm->stack[vm->fp + index]);
+                int fp = vm->fp_stack[vm->fp_count - 1];
+                printf("FP IS: %d\n", fp);
+                push(vm, vm->stack[fp + index]);
                 break;
             }
             case OP_ADD: BINARY_OP(+, AS_NUM); break;
@@ -274,14 +279,21 @@ do { \
                     return;
                 }
 
-                vm->argcount = argcount;
-
+                Object arguments[256];
+                for (int i = 0; i < argcount; i++) {
+                    arguments[i] = pop(vm);
+                }
+                
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
-                
+
                 /* After that, we update the frame pointer. */
-                vm->fp = vm->tos - (1 + argcount);
-                
+                vm->fp_stack[vm->fp_count++] = vm->tos;
+
+                for (int i = argcount - 1; i >= 0; i--) {
+                    push(vm, arguments[i]);
+                }
+                                
                 /* We modify ip so that it points to one instruction
                  * just before the code we're invoking. */
                 ip = &chunk->code.data[funcobj->as.func.location-1];
@@ -295,19 +307,21 @@ do { \
                  * address in order to modify ip and return to the
                  * caller. We need to first pop both of them: */
                 Object returnvalue = pop(vm);
-                Object returnaddr = pop(vm);
+
+                int fp = vm->fp_stack[--vm->fp_count];
 
                 /* After the return value, there are function
                  * arguments, so we clean up the stack. */
-                for (int i = 0; i < vm->argcount; i++) {
+                int to_pop = vm->tos - fp;
+                for (int i = 0; i < to_pop; i++) {
                     pop(vm);
                 }
+
+                Object returnaddr = pop(vm);
 
                 /* We push the return value back on the stack.  */
                 push(vm, returnvalue);
 
-                /* After that, we update the frame pointer. */
-                vm->fp = vm->tos - (vm->argcount + 2);
 
                 /* Finally, we modify the instruction pointer. */
                 ip = returnaddr.as.ptr;
