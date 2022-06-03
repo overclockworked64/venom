@@ -475,6 +475,8 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             break;
         }
         case STMT_FN: {           
+            init_compiler(compiler);
+
             emit_byte(chunk, OP_FUNC);
 
             /* Emit function name. */
