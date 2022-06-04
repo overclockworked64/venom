@@ -58,6 +58,7 @@ void run_file(char *file) {
     run(&vm, &compiler, &chunk);
 
     dynarray_free(&stmts);
+    free_compiler(&compiler);
     free_chunk(&chunk);
     free_vm(&vm);
     free(source);

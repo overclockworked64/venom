@@ -40,6 +40,18 @@ void free_stmt(Statement stmt) {
             free(stmt.body);
             break;
         }
+        case STMT_FN: {
+            free(stmt.name);
+            for (size_t i = 0; i < stmt.parameters.count; i++) {
+                free(stmt.parameters.data[i]);
+            }
+            dynarray_free(&stmt.parameters);
+            for (size_t i = 0; i < stmt.stmts.count; i++) {
+                free_stmt(stmt.stmts.data[i]);
+            }
+            dynarray_free(&stmt.stmts);
+            break;
+        }
         default: break;
     }
 
@@ -59,6 +71,18 @@ void free_expression(Expression e) {
             free_expression(e.data.binexp->lhs);
             free_expression(e.data.binexp->rhs);
             free(e.data.binexp);
+            break;
+        }
+        case EXP_ASSIGN: {
+            free(e.name);
+            free_expression(e.data.binexp->lhs);
+            free_expression(e.data.binexp->rhs);
+            free(e.data.binexp);
+            break;
+        }
+        case EXP_CALL: {
+            free(e.name);
+            dynarray_free(&e.arguments);
             break;
         }
     }

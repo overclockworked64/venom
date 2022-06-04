@@ -24,6 +24,10 @@ void free_chunk(BytecodeChunk *chunk) {
         free(chunk->sp[i]);
 }
 
+void free_compiler(Compiler *compiler) {
+    table_free(&compiler->functions);
+}
+
 static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
     /* check if the string is already present in the pool */
     for (uint8_t i = 0; i < chunk->sp_count; ++i) {
