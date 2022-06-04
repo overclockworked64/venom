@@ -253,13 +253,11 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = equality(parser, tokenizer);
-    char *name = own_string_n(parser->previous.start, parser->previous.length);
     if (match(parser, tokenizer, 2, TOKEN_EQUAL)) {
         Expression right = assignment(parser, tokenizer);
         Expression result = { 
             .kind = EXP_ASSIGN,
             .data.binexp = malloc(sizeof(BinaryExpression)),
-            .name = name,
         };
         result.data.binexp->lhs = expr;
         result.data.binexp->rhs = right;

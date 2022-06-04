@@ -217,11 +217,11 @@ static void compile_expression(
         }
         case EXP_ASSIGN: {
             compile_expression(compiler, chunk, exp.data.binexp->rhs);
-            int index = resolve_local(compiler, exp.name);
+            int index = resolve_local(compiler, exp.data.binexp->lhs.name);
             if (index != -1) {
                 emit_bytes(chunk, 2, OP_DEEP_SET, index);
             } else {
-                uint8_t name_index = add_string(chunk, exp.name);
+                uint8_t name_index = add_string(chunk, exp.data.binexp->lhs.name);
                 emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             }
             break;
