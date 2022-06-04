@@ -170,14 +170,14 @@ do { \
             case OP_DEEP_SET: {
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);
-                int fp = vm->fp_stack[vm->fp_count - 1];
-                vm->stack[fp + index] = obj;
+                int fp = vm->fp_stack[vm->fp_count-1];
+                vm->stack[fp+index] = obj;
                 break;
             }
             case OP_DEEP_GET: {
                 uint8_t index = READ_UINT8();
-                int fp = vm->fp_stack[vm->fp_count - 1];
-                push(vm, vm->stack[fp + index]);
+                int fp = vm->fp_stack[vm->fp_count-1];
+                push(vm, vm->stack[fp+index]);
                 break;
             }
             case OP_ADD: BINARY_OP(+, AS_NUM); break;
@@ -289,7 +289,7 @@ do { \
                 /* After that, we update the frame pointer. */
                 vm->fp_stack[vm->fp_count++] = vm->tos;
 
-                for (int i = argcount - 1; i >= 0; i--) {
+                for (int i = argcount-1; i >= 0; i--) {
                     push(vm, arguments[i]);
                 }
                                 
