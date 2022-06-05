@@ -506,15 +506,15 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
 
             compiler->paramcount = stmt.parameters.count;
 
-            bool has_return = false;
+            bool is_void = true;
             for (size_t i = 0; i < stmt.stmts.count; ++i) {
                 if (stmt.stmts.data[i].kind == STMT_RETURN) {
-                    has_return = true;
+                    is_void = false;
                 }
                 compile(compiler, chunk, stmt.stmts.data[i], true);
             }
 
-            if (!has_return) {
+            if (is_void) {
                 emit_bytes(chunk, 2, OP_NULL, OP_RET);
             }
 
