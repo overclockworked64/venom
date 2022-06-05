@@ -46,7 +46,6 @@ typedef struct BytecodeChunk {
 
 typedef struct {
     int paramcount;
-    Table functions;
     char *locals[256];
     int locals_count;
 } Compiler;
@@ -56,6 +55,5 @@ void free_chunk(BytecodeChunk *chunk);
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped);
 void disassemble(BytecodeChunk *chunk);
 void init_compiler(Compiler *compiler);
-void free_compiler(Compiler *compiler);
 
 #endif

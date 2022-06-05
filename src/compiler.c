@@ -24,10 +24,6 @@ void free_chunk(BytecodeChunk *chunk) {
         free(chunk->sp[i]);
 }
 
-void free_compiler(Compiler *compiler) {
-    table_free(&compiler->functions);
-}
-
 static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
     /* check if the string is already present in the pool */
     for (uint8_t i = 0; i < chunk->sp_count; ++i) {
@@ -499,8 +495,6 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
            
             /* Emit the location of the start of the function. */
             emit_byte(chunk, (uint8_t)(chunk->code.count + 4));
-
-            table_insert(&compiler->functions, stmt.name, (Object){ .type = OBJ_NUMBER, .as.dval = chunk->code.count + 3});
             
             int jump = emit_jump(chunk, OP_JMP);
 
