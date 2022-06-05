@@ -28,7 +28,7 @@ static Object pop(VM *vm) {
     return vm->stack[--vm->tos];
 }
 
-void run(VM *vm, Compiler *compiler, BytecodeChunk *chunk) {
+void run(VM *vm, BytecodeChunk *chunk) {
 #define BINARY_OP(op, wrapper) \
 do { \
     /* operands are already on the stack */ \
