@@ -12,7 +12,7 @@ typedef struct {
     Object stack[STACK_MAX];
     size_t tos; /* top of stack */
     Table globals;
-    int fp_stack[256]; /* a stack for frame pointers */
+    int fp_stack[STACK_MAX]; /* a stack for frame pointers */
     size_t fp_count;
 } VM;
 
