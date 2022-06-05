@@ -14,7 +14,7 @@ typedef struct {
     size_t tos; /* top of stack */
     Table globals;
     int fp_stack[256]; /* a stack for frame pointers */
-    int fp_count;
+    size_t fp_count;
 } VM;
 
 typedef struct BytecodeChunk BytecodeChunk;
