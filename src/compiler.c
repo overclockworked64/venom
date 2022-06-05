@@ -498,8 +498,6 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             
             int jump = emit_jump(chunk, OP_JMP);
 
-            compiler->paramcount = stmt.parameters.count;
-
             bool is_void = true;
             for (size_t i = 0; i < stmt.stmts.count; ++i) {
                 if (stmt.stmts.data[i].kind == STMT_RETURN) {

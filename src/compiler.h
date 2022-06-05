@@ -45,7 +45,6 @@ typedef struct BytecodeChunk {
 } BytecodeChunk;
 
 typedef struct {
-    int paramcount;
     char *locals[256];
     int locals_count;
 } Compiler;
