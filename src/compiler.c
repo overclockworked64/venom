@@ -490,7 +490,6 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             for (size_t i = 0; i < stmt.parameters.count; i++) {
                 uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
                 compiler->locals[compiler->locals_count++] = chunk->sp[parameter_index];
-                emit_byte(chunk, parameter_index);
             }
            
             /* Emit the location of the start of the function. */

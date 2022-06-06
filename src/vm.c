@@ -219,12 +219,6 @@ do { \
                 uint8_t funcname_index = READ_UINT8();
                 uint8_t paramcount = READ_UINT8();
 
-                /* After that come the parameters, that is,
-                 * their indices in the string constant pool. */
-                for (int i = 0; i < paramcount; i++) {
-                    uint8_t name_index = READ_UINT8();
-                }
-
                 /* After the parameters, there are 3 more bytes.
                  * The first byte is the location of the start of
                  * the function, and the other two bytes comprise 
@@ -286,7 +280,8 @@ do { \
                 /* Then, we push the return address on the stack. */
                 push(vm, AS_POINTER(ip));
 
-                /* After that, we update the frame pointer. */
+                /* After that, we push the current frame pointer
+                 * on the frame pointer stack. */
                 vm->fp_stack[vm->fp_count++] = vm->tos;
 
                 for (int i = argcount-1; i >= 0; i--) {
