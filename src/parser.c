@@ -132,6 +132,7 @@ static Expression number(Parser *parser) {
     return (Expression){
         .kind = EXP_LITERAL,
         .data.dval = strtod(parser->previous.start, NULL),
+        .name = NULL,
     };
 }
 
@@ -324,6 +325,12 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
         return variable(parser);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
         return grouping(parser, tokenizer);
+    } else if (match(parser, tokenizer, 1, TOKEN_TRUE)) {
+        return (Expression){ .kind = EXP_LITERAL, .name = "true" };
+    } else if (match(parser, tokenizer, 1, TOKEN_FALSE)) {
+        return (Expression){ .kind = EXP_LITERAL, .name = "false" };
+    } else if (match(parser, tokenizer, 1, TOKEN_NULL)) {
+        return (Expression){ .kind = EXP_LITERAL, .name = "null" };
     }
 }
 

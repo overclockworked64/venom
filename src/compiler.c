@@ -160,8 +160,18 @@ static void compile_expression(
 ) {
     switch (exp.kind) {
         case EXP_LITERAL: {
-            uint8_t const_index = add_constant(chunk, exp.data.dval);
-            emit_bytes(chunk, 2, OP_CONST, const_index);
+            if (exp.name == NULL) {
+                uint8_t const_index = add_constant(chunk, exp.data.dval);
+                emit_bytes(chunk, 2, OP_CONST, const_index);
+            } else {
+                if (strcmp(exp.name, "true") == 0) {
+                    emit_byte(chunk, OP_TRUE);
+                } else if (strcmp(exp.name, "false") == 0) {
+                    emit_bytes(chunk, 2, OP_TRUE, OP_NOT);
+                } else if (strcmp(exp.name, "null") == 0) {
+                    emit_byte(chunk, OP_NULL);
+                }
+            }
             break;
         }
         case EXP_VARIABLE: {

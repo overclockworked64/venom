@@ -171,6 +171,9 @@ Token get_token(Tokenizer *tokenizer) {
             if (lookahead(tokenizer, 1, "n")) {
                 return make_token(tokenizer, TOKEN_FN, 2);
             }
+            if (lookahead(tokenizer, 4, "alse")) {
+                return make_token(tokenizer, TOKEN_FALSE, 5);
+            }
             return identifier(tokenizer);
         }
         case 'i': {
@@ -185,6 +188,12 @@ Token get_token(Tokenizer *tokenizer) {
             }
             return identifier(tokenizer);
         }
+        case 'n': {
+            if (lookahead(tokenizer, 3, "ull")) {
+                return make_token(tokenizer, TOKEN_NULL, 4);
+            }
+            return identifier(tokenizer);
+        }
         case 'p': {
             if (lookahead(tokenizer, 4, "rint")) {
                 return make_token(tokenizer, TOKEN_PRINT, 5);
@@ -194,6 +203,12 @@ Token get_token(Tokenizer *tokenizer) {
         case 'r': {
             if (lookahead(tokenizer, 5, "eturn")) {
                 return make_token(tokenizer, TOKEN_RETURN, 6);
+            }
+            return identifier(tokenizer);
+        }
+        case 't': {
+            if (lookahead(tokenizer, 3, "rue")) {
+                return make_token(tokenizer, TOKEN_TRUE, 4);
             }
             return identifier(tokenizer);
         }

@@ -322,6 +322,10 @@ do { \
 
                 break;
             }
+            case OP_TRUE: {
+                push(vm, AS_BOOL(true));
+                break;
+            }
             case OP_NULL: {
                 push(vm, (Object){ .type = OBJ_NULL });
                 break;
