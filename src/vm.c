@@ -53,7 +53,7 @@ do { \
 #define PRINT_STACK() \
 do { \
     printf("stack: ["); \
-    for (size_t i = 0; i < vm->tos; ++i) { \
+    for (size_t i = 0; i < vm->tos; i++) { \
         print_object(&vm->stack[i]); \
         printf(", "); \
     } \
@@ -221,7 +221,7 @@ do { \
 
                 /* After that come the parameters, that is,
                  * their indices in the string constant pool. */
-                for (int i = 0; i < paramcount; ++i) {
+                for (int i = 0; i < paramcount; i++) {
                     uint8_t name_index = READ_UINT8();
                 }
 

@@ -20,13 +20,13 @@ void init_chunk(BytecodeChunk *chunk) {
 
 void free_chunk(BytecodeChunk *chunk) {
     dynarray_free(&chunk->code);
-    for (int i = 0; i < chunk->sp_count; ++i) 
+    for (int i = 0; i < chunk->sp_count; i++) 
         free(chunk->sp[i]);
 }
 
 static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
     /* Check if the string is already present in the pool. */
-    for (uint8_t i = 0; i < chunk->sp_count; ++i) {
+    for (uint8_t i = 0; i < chunk->sp_count; i++) {
         /* If it is, return the index. */
         if (strcmp(chunk->sp[i], string) == 0) {
             return i;
@@ -41,7 +41,7 @@ static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
 
 static uint8_t add_constant(BytecodeChunk *chunk, double constant) {
     /* Check if the constant is already present in the pool. */
-    for (uint8_t i = 0; i < chunk->cp_count; ++i) {
+    for (uint8_t i = 0; i < chunk->cp_count; i++) {
         /* If it is, return the index. */
         if (chunk->cp[i] == constant) {
             return i;
@@ -60,7 +60,7 @@ static void emit_byte(BytecodeChunk *chunk, uint8_t byte) {
 static void emit_bytes(BytecodeChunk *chunk, uint8_t n, ...) {
     va_list ap;
     va_start(ap, n);
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; i++) {
         uint8_t byte = va_arg(ap, int);
         emit_byte(chunk, byte);
     }
@@ -208,7 +208,7 @@ static void compile_expression(
             break;
         }
         case EXP_CALL: {
-            for (size_t i = 0; i < exp.arguments.count; ++i) {
+            for (size_t i = 0; i < exp.arguments.count; i++) {
                 compile_expression(compiler, chunk, exp.arguments.data[i]);
             }
             uint8_t funcname_index = add_string(chunk, exp.name);
@@ -236,41 +236,41 @@ void disassemble(BytecodeChunk *chunk) {
     for (
         uint8_t *ip = chunk->code.data;    
         ip < &chunk->code.data[chunk->code.count];  /* ip < addr of just beyond the last instruction */
-        ip++, ++i
+        ip++, i++
     ) {
         switch (*ip) {
             case OP_CONST: {
                 uint8_t const_index = *++ip;
                 printf("%d: ", i);
                 printf("OP_CONST, byte (idx: %d): (val: '%f')\n", const_index, chunk->cp[const_index]);
-                ++i;
+                i++;
                 break;
             }
             case OP_GET_GLOBAL: {
                 printf("%d: ", i);
                 printf("OP_GET_GLOBAL + byte\n");
                 ++ip;
-                ++i;
+                i++;
                 break;
             }
             case OP_DEEP_GET: {
                 uint8_t name_index = *++ip;
                 printf("%d: ", i);
                 printf("OP_DEEP_GET, byte (%d): ('%s')\n", name_index, chunk->sp[name_index]);
-                ++i;
+                i++;
                 break;
             }
             case OP_DEEP_SET: {
                 uint8_t index = *++ip;
                 printf("%d: ", i);
                 printf("OP_DEEP_SET, byte (%d)\n", index);
-                ++i;
+                i++;
                 break;
             }
             case OP_SET_GLOBAL: {
                 printf("%d: ", i);
                 printf("OP_SET_GLOBAL\n");
-                ++i;
+                i++;
                 ++ip;
                 break;
             }
@@ -334,7 +334,7 @@ void disassemble(BytecodeChunk *chunk) {
                 printf(", byte (name: '%d' (%s)')", funcname_index, chunk->sp[funcname_index]);
                 uint8_t paramcount = *++ip;
                 printf(", byte (paramcount: '%d')", paramcount);
-                for (; i < paramcount; ++i) {
+                for (; i < paramcount; i++) {
                     uint8_t paramname_index = *++ip;
                     printf(", byte (param: '%d' (%s)')", paramname_index, chunk->sp[paramname_index]);
                 }
@@ -406,7 +406,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             break;
         }
         case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+            for (size_t i = 0; i < stmt.stmts.count; i++) {
                 compile(compiler, chunk, stmt.stmts.data[i], scoped);
             }
             break;
@@ -487,7 +487,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             emit_byte(chunk, (uint8_t)stmt.parameters.count);
 
             /* Emit parameter names. */
-            for (size_t i = 0; i < stmt.parameters.count; ++i) {
+            for (size_t i = 0; i < stmt.parameters.count; i++) {
                 uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
                 compiler->locals[compiler->locals_count++] = chunk->sp[parameter_index];
                 emit_byte(chunk, parameter_index);
@@ -499,7 +499,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             int jump = emit_jump(chunk, OP_JMP);
 
             bool is_void = true;
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+            for (size_t i = 0; i < stmt.stmts.count; i++) {
                 if (stmt.stmts.data[i].kind == STMT_RETURN) {
                     is_void = false;
                 }

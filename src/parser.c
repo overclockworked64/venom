@@ -18,7 +18,7 @@ void free_stmt(Statement stmt) {
             break;
         }
         case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; ++i) {
+            for (size_t i = 0; i < stmt.stmts.count; i++) {
                 free_stmt(stmt.stmts.data[i]);
             }
             dynarray_free(&stmt.stmts);
@@ -111,7 +111,7 @@ static bool check(Parser *parser, TokenType type) {
 static bool match(Parser *parser, Tokenizer *tokenizer, int size, ...) {
     va_list ap;
     va_start(ap, size);
-    for (int i = 0; i < size; ++i) {
+    for (int i = 0; i < size; i++) {
         TokenType type = va_arg(ap, TokenType);
         if (check(parser, type)) {
             advance(parser, tokenizer);
@@ -351,7 +351,7 @@ static void print_expression(Expression e) {
             break;
         }
         case EXP_CALL: {
-            for (size_t i = 0; i < e.arguments.count; ++i) {
+            for (size_t i = 0; i < e.arguments.count; i++) {
                 print_expression(e.arguments.data[i]);
             }
             printf("()");

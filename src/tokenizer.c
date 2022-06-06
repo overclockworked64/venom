@@ -42,7 +42,7 @@ static bool is_alpha(char c) {
 
 static bool lookahead(Tokenizer *tokenizer, int length, char *rest) {
     if (strncmp(tokenizer->current, rest, length) == 0) {
-        for (int i = 0; i < length; ++i) {
+        for (int i = 0; i < length; i++) {
             advance(tokenizer);
         }
         return true;
