@@ -12,7 +12,7 @@ void init_vm(VM *vm) {
 }
 
 void free_vm(VM* vm) {
-    /* free the globals table and its strings */
+    /* Free the globals table and its strings. */
     table_free(&vm->globals); 
 }
 
@@ -31,7 +31,7 @@ static Object pop(VM *vm) {
 void run(VM *vm, BytecodeChunk *chunk) {
 #define BINARY_OP(op, wrapper) \
 do { \
-    /* operands are already on the stack */ \
+    /* Operands are already on the stack. */ \
     Object b = pop(vm); \
     Object a = pop(vm); \
     push(vm, wrapper(NUM_VAL(a) op NUM_VAL(b))); \

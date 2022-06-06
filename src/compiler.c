@@ -25,30 +25,30 @@ void free_chunk(BytecodeChunk *chunk) {
 }
 
 static uint8_t add_string(BytecodeChunk *chunk, const char *string) {
-    /* check if the string is already present in the pool */
+    /* Check if the string is already present in the pool. */
     for (uint8_t i = 0; i < chunk->sp_count; ++i) {
-        /* if it is, return the index. */
+        /* If it is, return the index. */
         if (strcmp(chunk->sp[i], string) == 0) {
             return i;
         }
     }
-    /* otherwise, insert the string into
-     * the pool and return the index */
+    /* Otherwise, own the string, insert it into the pool
+     * and return the index. */
     char *s = own_string(string);
     chunk->sp[chunk->sp_count++] = s;
     return chunk->sp_count - 1;
 }
 
 static uint8_t add_constant(BytecodeChunk *chunk, double constant) {
-    /* check if the constant is already present in the pool */
+    /* Check if the constant is already present in the pool. */
     for (uint8_t i = 0; i < chunk->cp_count; ++i) {
-        /* if it is, return the index. */
+        /* If it is, return the index. */
         if (chunk->cp[i] == constant) {
             return i;
         }
     }
-    /* otherwise, insert the constant into
-     * the pool and return the index */
+    /* Otherwise, insert the constant into the pool
+     * and return the index. */
     chunk->cp[chunk->cp_count++] = constant;
     return chunk->cp_count - 1;
 }
