@@ -153,11 +153,7 @@ static int resolve_local(Compiler *compiler, char *name) {
     return -1;
 }
 
-static void compile_expression(
-    Compiler *compiler,
-    BytecodeChunk *chunk,
-    Expression exp
-) {
+static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case EXP_LITERAL: {
             if (exp.name == NULL) {
