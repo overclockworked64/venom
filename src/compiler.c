@@ -494,7 +494,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             /* Emit parameter count. */
             emit_byte(chunk, (uint8_t)stmt.parameters.count);
 
-            /* Emit parameter names. */
+            /* Add parameter names to compiler->locals. */
             for (size_t i = 0; i < stmt.parameters.count; i++) {
                 uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
                 compiler->locals[compiler->locals_count++] = chunk->sp[parameter_index];
