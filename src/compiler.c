@@ -456,7 +456,8 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
         }
         case STMT_WHILE: {    
             /* We need to mark the beginning of the loop before we compile
-             * the conditional expression, so that we can emit OP_LOOP later. */
+             * the conditional expression, so that we know where to return
+             * after the body of the loop is executed. */
             int loop_start = chunk->code.count;
 
             /* We then compile the conditional expression because the VM
@@ -474,6 +475,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * because at that point its size is known. */ 
             int exit_jump = emit_jump(chunk, OP_JZ);
             
+            /* Then, we compile the body of the loop. */
             compile(compiler, chunk, *stmt.body, scoped);
 
             /* Then, we emit OP_JMP with a negative offset. */
@@ -505,8 +507,11 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             /* Emit the location of the start of the function. */
             emit_byte(chunk, (uint8_t)(chunk->code.count + 4));
             
+            /* Emit the jump because we don't want to execute
+             * the code the first time we encounter it. */
             int jump = emit_jump(chunk, OP_JMP);
 
+            /* Compile the function body and check if it is void. */
             bool is_void = true;
             for (size_t i = 0; i < stmt.stmts.count; i++) {
                 if (stmt.stmts.data[i].kind == STMT_RETURN) {
@@ -515,15 +520,19 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
                 compile(compiler, chunk, stmt.stmts.data[i], true);
             }
 
+            /* If the function does not have a return statement,
+             * emit OP_NULL because we have to return something. */
             if (is_void) {
                 emit_bytes(chunk, 2, OP_NULL, OP_RET);
             }
 
+            /* Finally, patch the jump. */
             patch_jump(chunk, jump);
 
             break;
         }
         case STMT_RETURN: {
+            /* Compile the return value and emit OP_RET. */
             compile_expression(compiler, chunk, stmt.exp);
             emit_byte(chunk, OP_RET);
             break;
