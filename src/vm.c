@@ -243,7 +243,7 @@ do { \
                 break;
             }
             case OP_INVOKE: {
-                /* We first read the index of the function name. */
+                /* We first read the index of the function name and the argcount. */
                 uint8_t funcname = READ_UINT8();
                 uint8_t argcount = READ_UINT8();
 
@@ -261,6 +261,9 @@ do { \
                     return;
                 }
 
+                /* If the number of arguments the function was called with 
+                 + does not match the number of parameters the function was
+                 * declared to accept, raise a runtime error. */
                 if (argcount != funcobj->as.func.paramcount) {
                     char msg[512];
                     snprintf(
@@ -272,6 +275,9 @@ do { \
                     return;
                 }
 
+                /* Since we need the arguments after the instruction pointer,
+                 * pop them into a temporary array so we can push them back
+                 * after we place the instruction pointer on the stack. */
                 Object arguments[256];
                 for (int i = 0; i < argcount; i++) {
                     arguments[i] = pop(vm);
@@ -284,6 +290,7 @@ do { \
                  * on the frame pointer stack. */
                 vm->fp_stack[vm->fp_count++] = vm->tos;
 
+                /* Push the arguments back on the stack, but in reverse order. */
                 for (int i = argcount-1; i >= 0; i--) {
                     push(vm, arguments[i]);
                 }
