@@ -238,6 +238,7 @@ do { \
                     .as.func = func,
                 };
 
+                /* ...and insert it into the 'vm->globals' table. */
                 table_insert(&vm->globals, funcname, funcobj);
 
                 break;
