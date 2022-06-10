@@ -39,7 +39,7 @@ do { \
 
 #define READ_UINT8() (*++ip)
 
-#define READ_INT16(offset) \
+#define READ_INT16() \
     /* ip points to one of the jump instructions and there \
      * is a 2-byte operand (offset) that comes after the jump \
      * instruction. We want to increment the ip so it points \
@@ -47,7 +47,7 @@ do { \
      * offset from the two bytes. Then ip is incremented in \
      * the loop again so it points to the next instruction \
      * (as opposed to pointing somewhere in the middle). */ \
-    (ip += 2 + offset, \
+    (ip += 2, \
     (int16_t)((ip[-1] << 8) | ip[0]))
 
 #define PRINT_STACK() \
@@ -189,14 +189,14 @@ do { \
             case OP_EQ: BINARY_OP(==, AS_BOOL); break;
             case OP_JZ: {
                 /* Jump if zero. */
-                int16_t offset = READ_INT16(0);
+                int16_t offset = READ_INT16();
                 if (!BOOL_VAL(pop(vm))) {
                     ip += offset;
                 }
                 break;
             }
             case OP_JMP: {
-                int16_t offset = READ_INT16(0);
+                int16_t offset = READ_INT16();
                 ip += offset;
                 break;
             }
