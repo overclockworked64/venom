@@ -219,10 +219,9 @@ do { \
                 uint8_t funcname_index = READ_UINT8();
                 uint8_t paramcount = READ_UINT8();
 
-                /* After the parameters, there are 3 more bytes.
-                 * The first byte is the location of the start of
-                 * the function, and the other two bytes comprise 
-                 * the size of the function in bytes. */
+                /* After the number of parameters, there
+                 * is one more byte: the location of the
+                 * function in the bytecode. */ 
                 uint8_t location = READ_UINT8();
 
                 /* We make the function object... */
