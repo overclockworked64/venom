@@ -304,24 +304,27 @@ do { \
             }
             case OP_RET: {
                 /* By the time we encounter OP_RET, the return
-                 * value is located on the stack. Beneath it is
-                 * the return address. We need to get the return
-                 * address in order to modify ip and return to the
-                 * caller. We need to first pop both of them: */
+                 * value is located on the stack. Beneath it are
+                 * the function arguments, followed by the return
+                 * address. */
                 Object returnvalue = pop(vm);
 
+                /* We pop the last frame pointer off the frame pointer stack. */
                 int fp = vm->fp_stack[--vm->fp_count];
 
-                /* After the return value, there are function
-                 * arguments, so we clean up the stack. */
+                /* Then, we clean up everything between the top of the stack
+                 * and the frame pointer we popped in the previous step. */
                 int to_pop = vm->tos - fp;
                 for (int i = 0; i < to_pop; i++) {
                     pop(vm);
                 }
 
+                /* After the arguments comes the return address which we'll
+                 * use to modify the instruction pointer ip and return to the
+                 * caller. */
                 Object returnaddr = pop(vm);
 
-                /* We push the return value back on the stack.  */
+                /* Then, we push the return value back on the stack.  */
                 push(vm, returnvalue);
 
 
