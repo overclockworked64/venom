@@ -13,5 +13,7 @@ void print_object(Object *object) {
         printf("PTR ('%d')", *object->as.ptr);
     } else if IS_NULL(object) {
         printf("null");
+    } else if IS_STRING(object) {
+        printf("%s", object->as.str);
     }
 }

@@ -167,6 +167,19 @@ do { \
                 push(vm, AS_NUM(chunk->cp[index]));
                 break;
             }
+            case OP_STR: {
+                /* At this point, ip points to OP_CONST.
+                 * Since this is a 2-byte instruction with an
+                 * immediate operand (the index of the double
+                 * constant in the constant pool), we want to
+                 * increment the ip to point to the index of
+                 * the constant in the constant pool that comes
+                 * after the opcode, and push the constant on
+                 * the stack. */
+                uint8_t index = READ_UINT8();
+                push(vm, AS_STR(chunk->sp[index]));
+                break;
+            }
             case OP_DEEP_SET: {
                 uint8_t index = READ_UINT8();
                 Object obj = pop(vm);

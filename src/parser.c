@@ -14,48 +14,46 @@
 void free_stmt(Statement stmt) {
     switch (stmt.kind) {
         case STMT_LET: {
-            free(stmt.name);
+            free(stmt.as.stmt_let.name);
             break;
         }
         case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; i++) {
-                free_stmt(stmt.stmts.data[i]);
+            for (size_t i = 0; i < stmt.as.stmt_block.stmts.count; i++) {
+                free_stmt(stmt.as.stmt_block.stmts.data[i]);
             }
-            dynarray_free(&stmt.stmts);
+            dynarray_free(&stmt.as.stmt_block.stmts);
             break;
         }
         case STMT_IF: {
-            free_stmt(*stmt.then_branch);
-            free(stmt.then_branch);
+            free_stmt(*stmt.as.stmt_if.then_branch);
+            free(stmt.as.stmt_if.then_branch);
 
-            if (stmt.else_branch != NULL) {
-                free_stmt(*stmt.else_branch);
-                free(stmt.else_branch);
+            if (stmt.as.stmt_if.else_branch != NULL) {
+                free_stmt(*stmt.as.stmt_if.else_branch);
+                free(stmt.as.stmt_if.else_branch);
             }
 
             break;
         }
         case STMT_WHILE: {
-            free_stmt(*stmt.body);
-            free(stmt.body);
+            free_stmt(*stmt.as.stmt_while.body);
+            free(stmt.as.stmt_while.body);
             break;
         }
         case STMT_FN: {
-            free(stmt.name);
-            for (size_t i = 0; i < stmt.parameters.count; i++) {
-                free(stmt.parameters.data[i]);
+            free(stmt.as.stmt_fn.name);
+            for (size_t i = 0; i < stmt.as.stmt_fn.parameters.count; i++) {
+                free(stmt.as.stmt_fn.parameters.data[i]);
             }
-            dynarray_free(&stmt.parameters);
-            for (size_t i = 0; i < stmt.stmts.count; i++) {
-                free_stmt(stmt.stmts.data[i]);
+            dynarray_free(&stmt.as.stmt_fn.parameters);
+            for (size_t i = 0; i < stmt.as.stmt_fn.stmts.count; i++) {
+                free_stmt(stmt.as.stmt_fn.stmts.data[i]);
             }
-            dynarray_free(&stmt.stmts);
+            dynarray_free(&stmt.as.stmt_fn.stmts);
             break;
         }
         default: break;
     }
-
-    free_expression(stmt.exp);
 }
 
 void free_expression(Expression e) {
@@ -132,6 +130,14 @@ static Expression number(Parser *parser) {
     return (Expression){
         .kind = EXP_LITERAL,
         .data.dval = strtod(parser->previous.start, NULL),
+        .name = NULL,
+    };
+}
+
+static Expression string(Parser *parser) {
+    return (Expression){
+        .kind = EXP_STRING,
+        .data.str = own_string_n(parser->previous.start, parser->previous.length - 1),
         .name = NULL,
     };
 }
@@ -321,6 +327,8 @@ static Statement_DynArray block(Parser *parser, Tokenizer *tokenizer) {
 static Expression primary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_NUMBER)) {
         return number(parser);
+    } else if (match(parser, tokenizer, 1, TOKEN_STRING)) {
+        return string(parser);
     } else if (match(parser, tokenizer, 1, TOKEN_IDENTIFIER)) {
         return variable(parser);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
@@ -364,6 +372,10 @@ static void print_expression(Expression e) {
             printf("()");
             break;
         }
+        case EXP_STRING: {
+            printf("%s", e.data.str);
+            break;
+        }
         default: assert(0);
     }
     printf(")");
@@ -381,11 +393,8 @@ static Statement print_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_SEMICOLON,
         "Expected semicolon at the end of the expression."
     );
-    return (Statement){
-        .kind = STMT_PRINT,
-        .exp = exp,
-        .name = NULL
-    };
+    PrintStatement stmt = { .exp = exp };
+    return (Statement){ .kind = STMT_PRINT, .as.stmt_print = stmt };
 }
 
 static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -408,11 +417,11 @@ static Statement let_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_SEMICOLON,
         "Expected semicolon at the end of the statement."
     );
-    return (Statement){
-        .kind = STMT_LET,
+    LetStatement stmt = {
         .name = name,
-        .exp = initializer
+        .initializer = initializer
     };
+    return (Statement){ .kind = STMT_LET, .as.stmt_let = stmt };
 }
 
 static Statement expression_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -422,10 +431,8 @@ static Statement expression_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_SEMICOLON,
         "Expected ';' after expression"
     );
-    return (Statement){
-        .kind = STMT_EXPR,
-        .exp = expr,
-    };
+    ExpressionStatement stmt = { .exp = expr };
+    return (Statement){ .kind = STMT_EXPR, .as.stmt_expr = stmt };
 }
 
 static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -451,12 +458,12 @@ static Statement if_statement(Parser *parser, Tokenizer *tokenizer) {
         *else_branch = statement(parser, tokenizer);
     }
 
-    return (Statement){
-        .kind = STMT_IF,
+    IfStatement stmt = {
         .then_branch = then_branch,
         .else_branch = else_branch,
-        .exp = condition,
+        .condition = condition,
     };
+    return (Statement){ .kind = STMT_IF, .as.stmt_if = stmt };
 }
 
 static Statement while_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -471,13 +478,12 @@ static Statement while_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_RIGHT_PAREN,
         "Expected ')' after condition."
     );
-    Statement stmt = {
-        .kind = STMT_WHILE,
-        .exp = condition,
+    WhileStatement stmt = {
+        .condition = condition,
         .body = malloc(sizeof(Statement)),
     };
     *stmt.body = statement(parser, tokenizer);
-    return stmt;
+    return (Statement){ .kind = STMT_WHILE, .as.stmt_while = stmt };
  }
 
 static Statement function_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -515,12 +521,12 @@ static Statement function_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_LEFT_BRACE,
         "Expected '{' after the ')'."
     );
-    return (Statement){
-        .kind = STMT_FN,
+    FunctionStatement stmt = {
         .name = own_string_n(name.start, name.length),
         .stmts = block(parser, tokenizer),
         .parameters = parameters,
     };
+    return (Statement){ .kind = STMT_FN, .as.stmt_fn = stmt };
 }
 
 static Statement return_statement(Parser *parser, Tokenizer *tokenizer) {
@@ -530,10 +536,10 @@ static Statement return_statement(Parser *parser, Tokenizer *tokenizer) {
         TOKEN_SEMICOLON,
         "Expected ';' after return."
     );
-    return (Statement){
-        .kind = STMT_RETURN,
-        .exp = expr,
+    ReturnStatement stmt = {
+        .returnval = expr,
     };
+    return (Statement){ .kind = STMT_RETURN, .as.stmt_return = stmt };
 }
 
 static Statement statement(Parser *parser, Tokenizer *tokenizer) {
@@ -542,7 +548,8 @@ static Statement statement(Parser *parser, Tokenizer *tokenizer) {
     } else if (match(parser, tokenizer, 1, TOKEN_LET)) {
         return let_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_BRACE)) {
-        return (Statement){ .kind = STMT_BLOCK, .stmts = block(parser, tokenizer) };
+        BlockStatement stmt = { .stmts = block(parser, tokenizer) };
+        return (Statement){ .kind = STMT_BLOCK, .as.stmt_block = stmt };
     } else if (match(parser, tokenizer, 1, TOKEN_IF)) {
         return if_statement(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_WHILE)) {

@@ -9,6 +9,7 @@
 typedef enum {
     EXP_LITERAL,
     EXP_VARIABLE,
+    EXP_STRING,
     EXP_UNARY,
     EXP_BINARY,
     EXP_CALL,
@@ -27,6 +28,7 @@ typedef struct Expression {
         struct Expression *exp;
         BinaryExpression *binexp;
         double dval;
+        char *str;
     } data;
     char *name;
     char *operator;
@@ -53,15 +55,56 @@ typedef struct Statement Statement;
 
 typedef DynArray(Statement) Statement_DynArray;
 
+typedef struct {
+    char *name;
+    Expression initializer;
+} LetStatement;
+
+typedef struct {
+    Expression exp;
+} PrintStatement;
+
+typedef struct {
+    Expression exp;
+} ExpressionStatement;
+
+typedef struct {
+    Statement_DynArray stmts;
+} BlockStatement;
+
+typedef struct {
+    char *name;
+    Statement_DynArray stmts;
+    String_DynArray parameters;
+} FunctionStatement;
+
+typedef struct {
+    Expression condition;
+    Statement *then_branch;
+    Statement *else_branch;
+} IfStatement;
+
+typedef struct {
+    Expression condition;
+    Statement *body;
+} WhileStatement;
+
+typedef struct {
+    Expression returnval;
+} ReturnStatement;
+
 typedef struct Statement {
     StatementKind kind;
-    char *name; /* used by let & assign */
-    Expression exp;
-    Statement_DynArray stmts;  /* used by block */
-    Statement *then_branch; /* used by if */
-    Statement *else_branch; /* used by if */
-    Statement *body; /* used by while */
-    String_DynArray parameters;
+    union {
+        PrintStatement stmt_print;
+        LetStatement stmt_let;
+        ExpressionStatement stmt_expr;
+        BlockStatement stmt_block;
+        FunctionStatement stmt_fn;
+        IfStatement stmt_if;
+        WhileStatement stmt_while;
+        ReturnStatement stmt_return;
+    } as;
 } Statement;
 
 typedef struct {

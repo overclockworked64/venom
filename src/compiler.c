@@ -159,6 +159,7 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
             if (exp.name == NULL) {
                 uint8_t const_index = add_constant(chunk, exp.data.dval);
                 emit_bytes(chunk, 2, OP_CONST, const_index);
+                break;
             } else {
                 if (strcmp(exp.name, "true") == 0) {
                     emit_byte(chunk, OP_TRUE);
@@ -168,6 +169,11 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
                     emit_byte(chunk, OP_NULL);
                 }
             }
+            break;
+        }
+        case EXP_STRING: {
+            uint8_t const_index = add_string(chunk, exp.data.str);
+            emit_bytes(chunk, 2, OP_STR, const_index);
             break;
         }
         case EXP_VARIABLE: {
@@ -393,13 +399,13 @@ void disassemble(BytecodeChunk *chunk) {
 void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scoped) {
     switch (stmt.kind) {
         case STMT_PRINT: {
-            compile_expression(compiler, chunk, stmt.exp);
+            compile_expression(compiler, chunk, stmt.as.stmt_print.exp);
             emit_byte(chunk, OP_PRINT);        
             break;
         }
         case STMT_LET: {
-            compile_expression(compiler, chunk, stmt.exp);
-            uint8_t name_index = add_string(chunk, stmt.name);
+            compile_expression(compiler, chunk, stmt.as.stmt_let.initializer);
+            uint8_t name_index = add_string(chunk, stmt.as.stmt_let.name);
             if (!scoped) {
                 emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             } else {
@@ -408,12 +414,12 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             break;
         }
         case STMT_EXPR: {
-            compile_expression(compiler, chunk, stmt.exp);
+            compile_expression(compiler, chunk, stmt.as.stmt_expr.exp);
             break;
         }
         case STMT_BLOCK: {
-            for (size_t i = 0; i < stmt.stmts.count; i++) {
-                compile(compiler, chunk, stmt.stmts.data[i], scoped);
+            for (size_t i = 0; i < stmt.as.stmt_block.stmts.count; i++) {
+                compile(compiler, chunk, stmt.as.stmt_block.stmts.data[i], scoped);
             }
             break;
         }
@@ -422,7 +428,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp);
+            compile_expression(compiler, chunk, stmt.as.stmt_if.condition);
  
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -433,15 +439,15 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
              * size of the 'then' branch is known. */ 
             int then_jump = emit_jump(chunk, OP_JZ);
             
-            compile(compiler, chunk, *stmt.then_branch, scoped);
+            compile(compiler, chunk, *stmt.as.stmt_if.then_branch, scoped);
 
             int else_jump = emit_jump(chunk, OP_JMP);
 
             /* Then, we patch the 'then' jump. */
             patch_jump(chunk, then_jump);
 
-            if (stmt.else_branch != NULL) {
-                compile(compiler, chunk, *stmt.else_branch, scoped);
+            if (stmt.as.stmt_if.else_branch != NULL) {
+                compile(compiler, chunk, *stmt.as.stmt_if.else_branch, scoped);
             }
 
             /* Finally, we patch the 'else' jump. If the 'else' branch
@@ -460,7 +466,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             .* expects something like OP_EQ to have already been executed
              * and a boolean placed on the stack by the time it encounters
              * an instruction like OP_JZ. */
-            compile_expression(compiler, chunk, stmt.exp);
+            compile_expression(compiler, chunk, stmt.as.stmt_while.condition);
             
             /* Then, we emit an OP_JZ which jumps to the else clause if the
              * condition is falsey. Because we do not know the size of the
@@ -472,7 +478,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             int exit_jump = emit_jump(chunk, OP_JZ);
             
             /* Then, we compile the body of the loop. */
-            compile(compiler, chunk, *stmt.body, scoped);
+            compile(compiler, chunk, *stmt.as.stmt_while.body, scoped);
 
             /* Then, we emit OP_JMP with a negative offset. */
             emit_loop(chunk, loop_start);
@@ -488,15 +494,15 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
             emit_byte(chunk, OP_FUNC);
 
             /* Emit function name. */
-            uint8_t name_index = add_string(chunk, stmt.name);
+            uint8_t name_index = add_string(chunk, stmt.as.stmt_fn.name);
             emit_byte(chunk, name_index);
 
             /* Emit parameter count. */
-            emit_byte(chunk, (uint8_t)stmt.parameters.count);
+            emit_byte(chunk, (uint8_t)stmt.as.stmt_fn.parameters.count);
 
             /* Add parameter names to compiler->locals. */
-            for (size_t i = 0; i < stmt.parameters.count; i++) {
-                uint8_t parameter_index = add_string(chunk, stmt.parameters.data[i]);
+            for (size_t i = 0; i < stmt.as.stmt_fn.parameters.count; i++) {
+                uint8_t parameter_index = add_string(chunk, stmt.as.stmt_fn.parameters.data[i]);
                 compiler->locals[compiler->locals_count++] = chunk->sp[parameter_index];
             }
            
@@ -509,11 +515,11 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
 
             /* Compile the function body and check if it is void. */
             bool is_void = true;
-            for (size_t i = 0; i < stmt.stmts.count; i++) {
-                if (stmt.stmts.data[i].kind == STMT_RETURN) {
+            for (size_t i = 0; i < stmt.as.stmt_fn.stmts.count; i++) {
+                if (stmt.as.stmt_fn.stmts.data[i].kind == STMT_RETURN) {
                     is_void = false;
                 }
-                compile(compiler, chunk, stmt.stmts.data[i], true);
+                compile(compiler, chunk, stmt.as.stmt_fn.stmts.data[i], true);
             }
 
             /* If the function does not have a return statement,
@@ -529,7 +535,7 @@ void compile(Compiler *compiler, BytecodeChunk *chunk, Statement stmt, bool scop
         }
         case STMT_RETURN: {
             /* Compile the return value and emit OP_RET. */
-            compile_expression(compiler, chunk, stmt.exp);
+            compile_expression(compiler, chunk, stmt.as.stmt_return.returnval);
             emit_byte(chunk, OP_RET);
             break;
         }

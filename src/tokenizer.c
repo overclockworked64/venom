@@ -76,6 +76,17 @@ static Token number(Tokenizer *tokenizer) {
     return make_token(tokenizer, TOKEN_NUMBER, length + 1);
 }
 
+static Token string(Tokenizer *tokenizer) {
+    int length = 0;
+    while (peek(tokenizer, 0) != '"') {
+        advance(tokenizer);
+        ++length;
+    }
+    advance(tokenizer);
+    ++length;
+    return make_token(tokenizer, TOKEN_STRING, length);
+}
+
 static Token identifier(Tokenizer *tokenizer) {
     int length = 0;
     while (is_digit(peek(tokenizer, 0)) || is_alpha(peek(tokenizer, 0))) {
@@ -137,6 +148,7 @@ Token get_token(Tokenizer *tokenizer) {
         case '}': return make_token(tokenizer, TOKEN_RIGHT_BRACE, 1);
         case ';': return make_token(tokenizer, TOKEN_SEMICOLON, 1);
         case ',': return make_token(tokenizer, TOKEN_COMMA, 1);
+        case '"': return string(tokenizer);
         case '>': {
             if (lookahead(tokenizer, 1, "=")) {
                 return make_token(tokenizer, TOKEN_GREATER_EQUAL, 2);
