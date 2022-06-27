@@ -165,8 +165,7 @@ static char *operator(Token token) {
         case TOKEN_GREATER_EQUAL: return ">=";
         case TOKEN_LESS: return "<";
         case TOKEN_LESS_EQUAL: return "<=";
-        default:
-            assert(0);
+        default: assert(0);
      }
 }
 
