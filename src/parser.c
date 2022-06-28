@@ -281,9 +281,41 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
     return expr;
 }
 
-static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
+static Expression and_(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = equality(parser, tokenizer);
-    if (match(parser, tokenizer, 2, TOKEN_EQUAL)) {
+    if (match(parser, tokenizer, 1, TOKEN_DOUBLE_AMPERSAND)) {
+        char *operator = own_string_n(parser->previous.start, parser->previous.length);
+        Expression right = equality(parser, tokenizer);
+        Expression result = { 
+            .kind = EXP_LOGICAL,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .operator = operator,
+        };
+        result.data.binexp->lhs = expr;
+        result.data.binexp->rhs = right;
+    }
+    return expr;
+}
+
+static Expression or_(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = and_(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_DOUBLE_PIPE)) {
+        char *operator = own_string_n(parser->previous.start, parser->previous.length);
+        Expression right = and_(parser, tokenizer);
+        Expression result = { 
+            .kind = EXP_LOGICAL,
+            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .operator = operator,
+        };
+        result.data.binexp->lhs = expr;
+        result.data.binexp->rhs = right;
+    }
+    return expr;
+}
+
+static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
+    Expression expr = or_(parser, tokenizer);
+    if (match(parser, tokenizer, 1, TOKEN_EQUAL)) {
         Expression right = assignment(parser, tokenizer);
         Expression result = { 
             .kind = EXP_ASSIGN,

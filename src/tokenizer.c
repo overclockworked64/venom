@@ -173,6 +173,18 @@ Token get_token(Tokenizer *tokenizer) {
             }
             return make_token(tokenizer, TOKEN_EQUAL, 1);
         }
+        case '&': {
+            if (lookahead(tokenizer, 1, "&")) {
+                return make_token(tokenizer, TOKEN_DOUBLE_AMPERSAND, 2);
+            }
+            return make_token(tokenizer, TOKEN_AMPERSAND, 1);
+        }
+        case '|': {
+            if (lookahead(tokenizer, 1, "|")) {
+                return make_token(tokenizer, TOKEN_DOUBLE_PIPE, 2);
+            }
+            return make_token(tokenizer, TOKEN_PIPE, 1);
+        }
         case 'e': {
             if (lookahead(tokenizer, 3, "lse")) {
                 return make_token(tokenizer, TOKEN_ELSE, 4);

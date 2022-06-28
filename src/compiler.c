@@ -238,6 +238,34 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
             }
             break;
         }
+        case EXP_LOGICAL: {
+            /* We first compile the left-hand side of the expression. */
+            compile_expression(compiler, chunk, exp.data.binexp->lhs);
+            if (strcmp(exp.operator, "&&") == 0) {
+                /* For logical AND, we emit a conditional jump which we'll use
+                 * to jump over the right-hand side operand if the left operand
+                 * was falsey (aka short-circuiting). Effectively, we will leave 
+                 * the left operand on the stack as the result of evaluating this
+                 * expression. */
+                int end_jump = emit_jump(chunk, OP_JZ);
+                compile_expression(compiler, chunk, exp.data.binexp->rhs);
+                patch_jump(chunk, end_jump);
+            } else if (strcmp(exp.operator, "||") == 0) {
+                /* For logical OR, we need to short-circuit when the left-hand side
+                 * is truthy. Thus, we have two jumps: the first one is conditional
+                 * jump that we use to jump over the code for the right-hand side. 
+                 * If the left-hand side was truthy, the execution falls through to
+                 * the second, unconditional jump that skips the code for the right
+                 * operand. However, if the left-hand side was falsey, it jumps over
+                 * the unconditional jump and evaluates the right-hand side operand. */
+                int else_jump = emit_jump(chunk, OP_JZ);
+                int end_jump = emit_jump(chunk, OP_JMP);
+                patch_jump(chunk, else_jump);
+                compile_expression(compiler, chunk, exp.data.binexp->rhs);
+                patch_jump(chunk, end_jump);
+            }
+            break;
+        }
         default: assert(0);
     }
 }
