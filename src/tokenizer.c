@@ -49,6 +49,10 @@ static bool is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
+static bool is_at_end(Tokenizer *tokenizer) {
+    return peek(tokenizer, 0) == '\0';
+}
+
 static bool lookahead(Tokenizer *tokenizer, int length, char *rest) {
     if (strncmp(tokenizer->current, rest, length) == 0) {
         for (int i = 0; i < length; i++) {
@@ -87,11 +91,11 @@ static Token number(Tokenizer *tokenizer) {
 
 static Token string(Tokenizer *tokenizer) {
     int length = 0;
-    while (peek(tokenizer, 0) != '"' && peek(tokenizer, 0) != '\0') {
+    while (peek(tokenizer, 0) != '"' && !is_at_end(tokenizer)) {
         advance(tokenizer);
         ++length;
     }
-    if (peek(tokenizer, 0) == '\0') {
+    if (is_at_end(tokenizer)) {
         tokenizing_error(tokenizer->line);
     }
     advance(tokenizer);
@@ -147,7 +151,7 @@ Token get_token(Tokenizer *tokenizer) {
     skip_whitespace(tokenizer);
 
     char c = advance(tokenizer);
-    if (c == '\0') return make_token(tokenizer, TOKEN_EOF, 0);
+    if (is_at_end(tokenizer)) return make_token(tokenizer, TOKEN_EOF, 0);
     if (is_digit(c)) return number(tokenizer);
     switch (c) {
         case '+': return make_token(tokenizer, TOKEN_PLUS, 1);
