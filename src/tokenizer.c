@@ -1,12 +1,14 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "tokenizer.h"
 
 #define venom_debug
 
 void init_tokenizer(Tokenizer *tokenizer, char *source) {
     tokenizer->current = source;
+    tokenizer->line = 1;
 }
 
 static char peek(Tokenizer *tokenizer, int distance) {
@@ -17,17 +19,24 @@ static char advance(Tokenizer *tokenizer) {
     return *tokenizer->current++;
 }
 
+static void tokenizing_error(int line) {
+    fprintf(stderr, "tokenizing error at line %d\n", line);
+    exit(1);
+}
+
 static void skip_whitespace(Tokenizer *tokenizer) {
     for (;;) {
         switch (peek(tokenizer, 0)) {
             case ' ':
-            case '\n':
             case '\r':
             case '\t':
                 advance(tokenizer);
                 break;
-            default:
-                return;
+            case '\n':
+                tokenizer->line++;
+                advance(tokenizer);
+                break;
+            default: return;
         }
     }
 }
@@ -78,9 +87,12 @@ static Token number(Tokenizer *tokenizer) {
 
 static Token string(Tokenizer *tokenizer) {
     int length = 0;
-    while (peek(tokenizer, 0) != '"') {
+    while (peek(tokenizer, 0) != '"' && peek(tokenizer, 0) != '\0') {
         advance(tokenizer);
         ++length;
+    }
+    if (peek(tokenizer, 0) == '\0') {
+        tokenizing_error(tokenizer->line);
     }
     advance(tokenizer);
     ++length;

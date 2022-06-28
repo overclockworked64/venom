@@ -53,6 +53,7 @@ typedef struct {
 
 typedef struct {
     char *current;
+    int line;
 } Tokenizer;
 
 void init_tokenizer(Tokenizer *tokenizer, char *source);
