@@ -17,8 +17,14 @@ typedef enum {
     EXP_LOGICAL,
 } ExpressionKind;
 
+typedef struct LiteralExpression LiteralExpression;
+typedef struct VariableExpression VariableExpression;
+typedef struct StringExpression StringExpression;
+typedef struct UnaryExpression UnaryExpression;
 typedef struct BinaryExpression BinaryExpression;
-
+typedef struct CallExpression CallExpression;
+typedef struct AssignExpression AssignExpression;
+typedef struct LogicalExpression LogicalExpression;
 typedef struct Expression Expression;
 
 typedef DynArray(Expression) Expression_DynArray;
@@ -26,20 +32,55 @@ typedef DynArray(Expression) Expression_DynArray;
 typedef struct Expression {
     ExpressionKind kind;
     union {
-        struct Expression *exp;
-        BinaryExpression *binexp;
-        double dval;
-        char *str;
-    } data;
-    char *name;
-    char *operator;
-    Expression_DynArray arguments;
+        LiteralExpression *expr_literal;
+        VariableExpression *expr_variable;
+        StringExpression *expr_string;
+        UnaryExpression *expr_unary;
+        BinaryExpression *expr_binary;
+        CallExpression *expr_call;
+        AssignExpression *expr_assign;
+        LogicalExpression *expr_logical;
+    } as;
 } Expression;
+
+typedef struct LiteralExpression {
+    double dval;
+    char *specval;
+} LiteralExpression;
+
+typedef struct VariableExpression {
+    char *name;
+} VariableExpression;
+
+typedef struct StringExpression {
+    char *str;
+} StringExpression;
+
+typedef struct UnaryExpression {
+    Expression *exp;
+} UnaryExpression;
 
 typedef struct BinaryExpression {
     Expression lhs;
     Expression rhs;    
+    char *operator;
 } BinaryExpression;
+
+typedef struct CallExpression {
+    char *name;
+    Expression_DynArray arguments;
+} CallExpression;
+
+typedef struct AssignExpression {
+    Expression lhs;
+    Expression rhs;
+} AssignExpression;
+
+typedef struct LogicalExpression {
+    Expression lhs;
+    Expression rhs;    
+    char *operator;
+} LogicalExpression;
 
 typedef enum {
     STMT_LET,

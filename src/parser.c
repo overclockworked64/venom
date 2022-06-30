@@ -58,29 +58,40 @@ void free_stmt(Statement stmt) {
 
 void free_expression(Expression e) {
     switch (e.kind) {
-        case EXP_LITERAL: return;
-        case EXP_VARIABLE: free(e.name); break;
+        case EXP_LITERAL: free(e.as.expr_literal); break;
+        case EXP_VARIABLE: {
+            free(e.as.expr_variable->name);
+            free(e.as.expr_variable);
+            break;
+        }
+        case EXP_STRING: {
+            free(e.as.expr_string->str);
+            free(e.as.expr_string);
+            break;
+        }
         case EXP_UNARY: {
-            free_expression(*e.data.exp);
-            free(e.data.exp);
+            free_expression(*e.as.expr_unary->exp);
+            free(e.as.expr_unary->exp);
+            free(e.as.expr_unary);
             break;
         }
         case EXP_BINARY: {
-            free_expression(e.data.binexp->lhs);
-            free_expression(e.data.binexp->rhs);
-            free(e.data.binexp);
+            free_expression(e.as.expr_binary->lhs);
+            free_expression(e.as.expr_binary->rhs);
+            free(e.as.expr_binary);
             break;
         }
         case EXP_ASSIGN: {
-            free(e.name);
-            free_expression(e.data.binexp->lhs);
-            free_expression(e.data.binexp->rhs);
-            free(e.data.binexp);
+            free(e.as.expr_assign->lhs.as.expr_variable->name);
+            free_expression(e.as.expr_assign->lhs);
+            free_expression(e.as.expr_assign->rhs);
+            free(e.as.expr_assign);
             break;
         }
         case EXP_CALL: {
-            free(e.name);
-            dynarray_free(&e.arguments);
+            free(e.as.expr_call->name);
+            dynarray_free(&e.as.expr_call->arguments);
+            free(e.as.expr_call);
             break;
         }
     }
@@ -127,25 +138,30 @@ static Token consume(Parser *parser, Tokenizer *tokenizer, TokenType type, char 
 }
 
 static Expression number(Parser *parser) {
+    LiteralExpression *e = malloc(sizeof(LiteralExpression));
+    e->dval = strtod(parser->previous.start, NULL);
+    e->specval = NULL;
     return (Expression){
         .kind = EXP_LITERAL,
-        .data.dval = strtod(parser->previous.start, NULL),
-        .name = NULL,
+        .as.expr_literal = e,
     };
 }
 
 static Expression string(Parser *parser) {
+    StringExpression *e = malloc(sizeof(StringExpression));
+    e->str = own_string_n(parser->previous.start, parser->previous.length - 1);
     return (Expression){
         .kind = EXP_STRING,
-        .data.str = own_string_n(parser->previous.start, parser->previous.length - 1),
-        .name = NULL,
+        .as.expr_string = e,
     };
 }
 
 static Expression variable(Parser *parser) {
+    VariableExpression *e = malloc(sizeof(VariableExpression));
+    e->name = own_string_n(parser->previous.start, parser->previous.length);
     return (Expression){
         .kind = EXP_VARIABLE,
-        .name = own_string_n(parser->previous.start, parser->previous.length)
+        .as.expr_variable = e, 
     };
 }
 
@@ -181,10 +197,12 @@ static Expression finish_call(Parser *parser, Tokenizer *tokenizer, Expression e
         TOKEN_RIGHT_PAREN,
         "Expected ')' after expression."
     );
+    CallExpression *e = malloc(sizeof(CallExpression));
+    e->arguments = arguments;
+    e->name = exp.as.expr_variable->name;
     return (Expression){
         .kind = EXP_CALL,
-        .arguments = arguments,
-        .name = exp.name,
+        .as.expr_call = e,
     };
 }
 
@@ -204,7 +222,9 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
     if (match(parser, tokenizer, 1, TOKEN_MINUS)) {
         Expression *right = malloc(sizeof(Expression));
         *right = unary(parser, tokenizer);
-        Expression result = { .kind = EXP_UNARY, .data.exp = right };
+        UnaryExpression *e = malloc(sizeof(UnaryExpression));
+        e->exp = right;
+        Expression result = { .kind = EXP_UNARY, .as.expr_unary = e };
         return result;
     }
     return call(parser, tokenizer);
@@ -217,11 +237,11 @@ static Expression factor(Parser *parser, Tokenizer *tokenizer) {
         Expression right = unary(parser, tokenizer);
         Expression result = { 
             .kind = EXP_BINARY, 
-            .data.binexp = malloc(sizeof(BinaryExpression)), 
-            .operator = op, 
+            .as.expr_binary = malloc(sizeof(BinaryExpression)), 
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_binary->lhs = expr;
+        result.as.expr_binary->rhs = right;
+        result.as.expr_binary->operator = op;
         expr = result;
     }
     return expr;
@@ -234,11 +254,11 @@ static Expression term(Parser *parser, Tokenizer *tokenizer) {
         Expression right = factor(parser, tokenizer);
         Expression result = { 
             .kind = EXP_BINARY,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = op,
+            .as.expr_binary = malloc(sizeof(BinaryExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_binary->lhs = expr;
+        result.as.expr_binary->rhs = right;
+        result.as.expr_binary->operator = op;
         expr = result;
     }
     return expr;
@@ -254,11 +274,11 @@ static Expression comparison(Parser *parser, Tokenizer *tokenizer) {
         Expression right = term(parser, tokenizer);
         Expression result = { 
             .kind = EXP_BINARY,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = op,
+            .as.expr_binary = malloc(sizeof(BinaryExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_binary->lhs = expr;
+        result.as.expr_binary->rhs = right;
+        result.as.expr_binary->operator = op;
         expr = result;
     }
     return expr;
@@ -271,11 +291,11 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
         Expression right = comparison(parser, tokenizer);
         Expression result = { 
             .kind = EXP_BINARY,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = op,
+            .as.expr_binary = malloc(sizeof(BinaryExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_binary->lhs = expr;
+        result.as.expr_binary->rhs = right;
+        result.as.expr_binary->operator = op;
         expr = result;
     }
     return expr;
@@ -284,15 +304,15 @@ static Expression equality(Parser *parser, Tokenizer *tokenizer) {
 static Expression and_(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = equality(parser, tokenizer);
     if (match(parser, tokenizer, 1, TOKEN_DOUBLE_AMPERSAND)) {
-        char *operator = own_string_n(parser->previous.start, parser->previous.length);
+        char *op = own_string_n(parser->previous.start, parser->previous.length);
         Expression right = equality(parser, tokenizer);
         Expression result = { 
             .kind = EXP_LOGICAL,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = operator,
+            .as.expr_logical = malloc(sizeof(LogicalExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_logical->lhs = expr;
+        result.as.expr_logical->rhs = right;
+        result.as.expr_logical->operator = op;
     }
     return expr;
 }
@@ -300,15 +320,15 @@ static Expression and_(Parser *parser, Tokenizer *tokenizer) {
 static Expression or_(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = and_(parser, tokenizer);
     if (match(parser, tokenizer, 1, TOKEN_DOUBLE_PIPE)) {
-        char *operator = own_string_n(parser->previous.start, parser->previous.length);
+        char *op = own_string_n(parser->previous.start, parser->previous.length);
         Expression right = and_(parser, tokenizer);
         Expression result = { 
             .kind = EXP_LOGICAL,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
-            .operator = operator,
+            .as.expr_logical = malloc(sizeof(LogicalExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_logical->lhs = expr;
+        result.as.expr_logical->rhs = right;
+        result.as.expr_logical->operator = op;
     }
     return expr;
 }
@@ -319,10 +339,10 @@ static Expression assignment(Parser *parser, Tokenizer *tokenizer) {
         Expression right = assignment(parser, tokenizer);
         Expression result = { 
             .kind = EXP_ASSIGN,
-            .data.binexp = malloc(sizeof(BinaryExpression)),
+            .as.expr_assign = malloc(sizeof(AssignExpression)),
         };
-        result.data.binexp->lhs = expr;
-        result.data.binexp->rhs = right;
+        result.as.expr_assign->lhs = expr;
+        result.as.expr_assign->rhs = right;
         return result;
     }
     return expr;
@@ -365,11 +385,17 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
         return grouping(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_TRUE)) {
-        return (Expression){ .kind = EXP_LITERAL, .name = "true" };
+        LiteralExpression *e = malloc(sizeof(LiteralExpression));
+        e->specval = "true";
+        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
     } else if (match(parser, tokenizer, 1, TOKEN_FALSE)) {
-        return (Expression){ .kind = EXP_LITERAL, .name = "false" };
+        LiteralExpression *e = malloc(sizeof(LiteralExpression));
+        e->specval = "false";
+        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
     } else if (match(parser, tokenizer, 1, TOKEN_NULL)) {
-        return (Expression){ .kind = EXP_LITERAL, .name = "null" };
+        LiteralExpression *e = malloc(sizeof(LiteralExpression));
+        e->specval = "null";
+        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
     }
 }
 
@@ -378,33 +404,33 @@ static void print_expression(Expression e) {
     printf("(");
     switch (e.kind) {
         case EXP_LITERAL: {
-            printf("%f", e.data.dval);
+            printf("%f", e.as.expr_literal->dval);
             break;
         }
         case EXP_VARIABLE: {
-            printf("%s", e.name);
+            printf("%s", e.as.expr_variable->name);
             break;
         }
         case EXP_UNARY: {
             printf("-");
-            print_expression(*e.data.exp);
+            print_expression(*e.as.expr_unary->exp);
             break;
         }
         case EXP_BINARY: {
-            print_expression(e.data.binexp->lhs);
-            printf(" %s ", e.operator);
-            print_expression(e.data.binexp->rhs);
+            print_expression(e.as.expr_binary->lhs);
+            printf(" %s ", e.as.expr_binary->operator);
+            print_expression(e.as.expr_binary->lhs);
             break;
         }
         case EXP_CALL: {
-            for (size_t i = 0; i < e.arguments.count; i++) {
-                print_expression(e.arguments.data[i]);
+            for (size_t i = 0; i < e.as.expr_call->arguments.count; i++) {
+                print_expression(e.as.expr_call->arguments.data[i]);
             }
             printf("()");
             break;
         }
         case EXP_STRING: {
-            printf("%s", e.data.str);
+            printf("%s", e.as.expr_string->str);
             break;
         }
         default: assert(0);

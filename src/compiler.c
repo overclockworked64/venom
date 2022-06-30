@@ -156,30 +156,30 @@ static int resolve_local(Compiler *compiler, char *name) {
 static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Expression exp) {
     switch (exp.kind) {
         case EXP_LITERAL: {
-            if (exp.name == NULL) {
-                uint8_t const_index = add_constant(chunk, exp.data.dval);
+            if (exp.as.expr_literal->specval == NULL) {
+                uint8_t const_index = add_constant(chunk, exp.as.expr_literal->dval);
                 emit_bytes(chunk, 2, OP_CONST, const_index);
                 break;
             } else {
-                if (strcmp(exp.name, "true") == 0) {
+                if (strcmp(exp.as.expr_literal->specval, "true") == 0) {
                     emit_byte(chunk, OP_TRUE);
-                } else if (strcmp(exp.name, "false") == 0) {
+                } else if (strcmp(exp.as.expr_literal->specval, "false") == 0) {
                     emit_bytes(chunk, 2, OP_TRUE, OP_NOT);
-                } else if (strcmp(exp.name, "null") == 0) {
+                } else if (strcmp(exp.as.expr_literal->specval, "null") == 0) {
                     emit_byte(chunk, OP_NULL);
                 }
             }
             break;
         }
         case EXP_STRING: {
-            uint8_t const_index = add_string(chunk, exp.data.str);
+            uint8_t const_index = add_string(chunk, exp.as.expr_string->str);
             emit_bytes(chunk, 2, OP_STR, const_index);
             break;
         }
         case EXP_VARIABLE: {
-            int index = resolve_local(compiler, exp.name);
+            int index = resolve_local(compiler, exp.as.expr_variable->name);
             if (index == -1) {
-                uint8_t name_index = add_string(chunk, exp.name);
+                uint8_t name_index = add_string(chunk, exp.as.expr_variable->name);
                 emit_bytes(chunk, 2, OP_GET_GLOBAL, name_index);
             } else {
                 emit_bytes(chunk, 2, OP_DEEP_GET, index);
@@ -187,70 +187,70 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
             break;
         }
         case EXP_UNARY: {
-            compile_expression(compiler, chunk, *exp.data.exp);
+            compile_expression(compiler, chunk, *exp.as.expr_unary->exp);
             emit_byte(chunk, OP_NEGATE);
             break;
         }
         case EXP_BINARY: {
-            compile_expression(compiler, chunk, exp.data.binexp->lhs);
-            compile_expression(compiler, chunk, exp.data.binexp->rhs);
+            compile_expression(compiler, chunk, exp.as.expr_binary->lhs);
+            compile_expression(compiler, chunk, exp.as.expr_binary->rhs);
 
-            if (strcmp(exp.operator, "+") == 0) {
+            if (strcmp(exp.as.expr_binary->operator, "+") == 0) {
                 emit_byte(chunk, OP_ADD);
-            } else if (strcmp(exp.operator, "-") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "-") == 0) {
                 emit_byte(chunk, OP_SUB);                
-            } else if (strcmp(exp.operator, "*") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "*") == 0) {
                 emit_byte(chunk, OP_MUL);
-            } else if (strcmp(exp.operator, "/") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
-            } else if (strcmp(exp.operator, ">") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, ">") == 0) {
                 emit_byte(chunk, OP_GT);
-            } else if (strcmp(exp.operator, "<") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "<") == 0) {
                 emit_byte(chunk, OP_LT);
-            } else if (strcmp(exp.operator, ">=") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, ">=") == 0) {
                 emit_bytes(chunk, 2, OP_LT, OP_NOT);
-            } else if (strcmp(exp.operator, "<=") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "<=") == 0) {
                 emit_bytes(chunk, 2, OP_GT, OP_NOT);
-            } else if (strcmp(exp.operator, "==") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "==") == 0) {
                 emit_byte(chunk, OP_EQ);
-            } else if (strcmp(exp.operator, "!=") == 0) {
+            } else if (strcmp(exp.as.expr_binary->operator, "!=") == 0) {
                 emit_bytes(chunk, 2, OP_EQ, OP_NOT);
             }
 
             break;
         }
         case EXP_CALL: {
-            for (size_t i = 0; i < exp.arguments.count; i++) {
-                compile_expression(compiler, chunk, exp.arguments.data[i]);
+            for (size_t i = 0; i < exp.as.expr_call->arguments.count; i++) {
+                compile_expression(compiler, chunk, exp.as.expr_call->arguments.data[i]);
             }
-            uint8_t funcname_index = add_string(chunk, exp.name);
-            emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.arguments.count);
+            uint8_t funcname_index = add_string(chunk, exp.as.expr_call->name);
+            emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.as.expr_call->arguments.count);
             break;
         }
         case EXP_ASSIGN: {
-            compile_expression(compiler, chunk, exp.data.binexp->rhs);
-            int index = resolve_local(compiler, exp.data.binexp->lhs.name);
+            compile_expression(compiler, chunk, exp.as.expr_assign->rhs);
+            int index = resolve_local(compiler, exp.as.expr_assign->lhs.as.expr_variable->name);
             if (index != -1) {
                 emit_bytes(chunk, 2, OP_DEEP_SET, index);
             } else {
-                uint8_t name_index = add_string(chunk, exp.data.binexp->lhs.name);
+                uint8_t name_index = add_string(chunk, exp.as.expr_assign->lhs.as.expr_variable->name);
                 emit_bytes(chunk, 2, OP_SET_GLOBAL, name_index);
             }
             break;
         }
         case EXP_LOGICAL: {
             /* We first compile the left-hand side of the expression. */
-            compile_expression(compiler, chunk, exp.data.binexp->lhs);
-            if (strcmp(exp.operator, "&&") == 0) {
+            compile_expression(compiler, chunk, exp.as.expr_logical->lhs);
+            if (strcmp(exp.as.expr_logical->operator, "&&") == 0) {
                 /* For logical AND, we emit a conditional jump which we'll use
                  * to jump over the right-hand side operand if the left operand
                  * was falsey (aka short-circuiting). Effectively, we will leave 
                  * the left operand on the stack as the result of evaluating this
                  * expression. */
                 int end_jump = emit_jump(chunk, OP_JZ);
-                compile_expression(compiler, chunk, exp.data.binexp->rhs);
+                compile_expression(compiler, chunk, exp.as.expr_logical->rhs);
                 patch_jump(chunk, end_jump);
-            } else if (strcmp(exp.operator, "||") == 0) {
+            } else if (strcmp(exp.as.expr_logical->operator, "||") == 0) {
                 /* For logical OR, we need to short-circuit when the left-hand side
                  * is truthy. Thus, we have two jumps: the first one is conditional
                  * jump that we use to jump over the code for the right-hand side. 
@@ -261,7 +261,7 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
                 int else_jump = emit_jump(chunk, OP_JZ);
                 int end_jump = emit_jump(chunk, OP_JMP);
                 patch_jump(chunk, else_jump);
-                compile_expression(compiler, chunk, exp.data.binexp->rhs);
+                compile_expression(compiler, chunk, exp.as.expr_logical->rhs);
                 patch_jump(chunk, end_jump);
             }
             break;
