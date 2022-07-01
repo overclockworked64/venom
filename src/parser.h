@@ -67,7 +67,7 @@ typedef struct BinaryExpression {
 } BinaryExpression;
 
 typedef struct CallExpression {
-    char *name;
+    VariableExpression *var;
     Expression_DynArray arguments;
 } CallExpression;
 

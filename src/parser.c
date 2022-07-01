@@ -13,7 +13,12 @@
 
 void free_stmt(Statement stmt) {
     switch (stmt.kind) {
+        case STMT_PRINT: {
+            free_expression(stmt.as.stmt_print.exp);
+            break;
+        }
         case STMT_LET: {
+            free_expression(stmt.as.stmt_let.initializer);
             free(stmt.as.stmt_let.name);
             break;
         }
@@ -25,6 +30,8 @@ void free_stmt(Statement stmt) {
             break;
         }
         case STMT_IF: {
+            free_expression(stmt.as.stmt_if.condition);
+
             free_stmt(*stmt.as.stmt_if.then_branch);
             free(stmt.as.stmt_if.then_branch);
 
@@ -36,8 +43,17 @@ void free_stmt(Statement stmt) {
             break;
         }
         case STMT_WHILE: {
+            free_expression(stmt.as.stmt_while.condition);
             free_stmt(*stmt.as.stmt_while.body);
             free(stmt.as.stmt_while.body);
+            break;
+        }
+        case STMT_RETURN: {
+            free_expression(stmt.as.stmt_return.returnval);
+            break;
+        }
+        case STMT_EXPR: {
+            free_expression(stmt.as.stmt_expr.exp);
             break;
         }
         case STMT_FN: {
@@ -58,7 +74,10 @@ void free_stmt(Statement stmt) {
 
 void free_expression(Expression e) {
     switch (e.kind) {
-        case EXP_LITERAL: free(e.as.expr_literal); break;
+        case EXP_LITERAL: {
+            free(e.as.expr_literal);
+            break;
+        }
         case EXP_VARIABLE: {
             free(e.as.expr_variable->name);
             free(e.as.expr_variable);
@@ -71,7 +90,6 @@ void free_expression(Expression e) {
         }
         case EXP_UNARY: {
             free_expression(*e.as.expr_unary->exp);
-            free(e.as.expr_unary->exp);
             free(e.as.expr_unary);
             break;
         }
@@ -82,14 +100,23 @@ void free_expression(Expression e) {
             break;
         }
         case EXP_ASSIGN: {
-            free(e.as.expr_assign->lhs.as.expr_variable->name);
             free_expression(e.as.expr_assign->lhs);
             free_expression(e.as.expr_assign->rhs);
             free(e.as.expr_assign);
             break;
         }
+        case EXP_LOGICAL: {
+            free_expression(e.as.expr_logical->lhs);
+            free_expression(e.as.expr_logical->rhs);
+            free(e.as.expr_logical);
+            break;
+        }
         case EXP_CALL: {
-            free(e.as.expr_call->name);
+            free(e.as.expr_call->var->name);
+            free(e.as.expr_call->var);
+            for (size_t i = 0; i < e.as.expr_call->arguments.count; i++) {
+                free_expression(e.as.expr_call->arguments.data[i]);
+            }
             dynarray_free(&e.as.expr_call->arguments);
             free(e.as.expr_call);
             break;
@@ -199,7 +226,7 @@ static Expression finish_call(Parser *parser, Tokenizer *tokenizer, Expression e
     );
     CallExpression *e = malloc(sizeof(CallExpression));
     e->arguments = arguments;
-    e->name = exp.as.expr_variable->name;
+    e->var = exp.as.expr_variable;
     return (Expression){
         .kind = EXP_CALL,
         .as.expr_call = e,

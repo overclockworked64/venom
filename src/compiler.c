@@ -223,7 +223,7 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
             for (size_t i = 0; i < exp.as.expr_call->arguments.count; i++) {
                 compile_expression(compiler, chunk, exp.as.expr_call->arguments.data[i]);
             }
-            uint8_t funcname_index = add_string(chunk, exp.as.expr_call->name);
+            uint8_t funcname_index = add_string(chunk, exp.as.expr_call->var->name);
             emit_bytes(chunk, 3, OP_INVOKE, funcname_index, exp.as.expr_call->arguments.count);
             break;
         }
