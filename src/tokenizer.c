@@ -150,8 +150,10 @@ void print_token(Token token) {
 Token get_token(Tokenizer *tokenizer) {
     skip_whitespace(tokenizer);
 
-    char c = advance(tokenizer);
     if (is_at_end(tokenizer)) return make_token(tokenizer, TOKEN_EOF, 0);
+
+    char c = advance(tokenizer);
+
     if (is_digit(c)) return number(tokenizer);
     switch (c) {
         case '+': return make_token(tokenizer, TOKEN_PLUS, 1);
