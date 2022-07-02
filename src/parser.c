@@ -192,6 +192,12 @@ static Expression variable(Parser *parser) {
     };
 }
 
+static Expression special_literal(char *specval) {
+    LiteralExpression *e = malloc(sizeof(LiteralExpression));
+    e->specval = specval;
+    return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
+}
+
 static Expression primary();
 static Expression expression(Parser *parser, Tokenizer *tokenizer);
 static Statement statement(Parser *parser, Tokenizer *tokenizer);
@@ -412,17 +418,11 @@ static Expression primary(Parser *parser, Tokenizer *tokenizer) {
     } else if (match(parser, tokenizer, 1, TOKEN_LEFT_PAREN)) {
         return grouping(parser, tokenizer);
     } else if (match(parser, tokenizer, 1, TOKEN_TRUE)) {
-        LiteralExpression *e = malloc(sizeof(LiteralExpression));
-        e->specval = "true";
-        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
+        return special_literal("true");
     } else if (match(parser, tokenizer, 1, TOKEN_FALSE)) {
-        LiteralExpression *e = malloc(sizeof(LiteralExpression));
-        e->specval = "false";
-        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
+        return special_literal("false");
     } else if (match(parser, tokenizer, 1, TOKEN_NULL)) {
-        LiteralExpression *e = malloc(sizeof(LiteralExpression));
-        e->specval = "null";
-        return (Expression){ .kind = EXP_LITERAL, .as.expr_literal = e };
+        return special_literal("null");
     }
 }
 
