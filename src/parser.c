@@ -450,6 +450,7 @@ static void print_expression(Expression e) {
             break;
         }
         case EXP_CALL: {
+            printf("%s", e.as.expr_call->var->name);
             for (size_t i = 0; i < e.as.expr_call->arguments.count; i++) {
                 print_expression(e.as.expr_call->arguments.data[i]);
             }
