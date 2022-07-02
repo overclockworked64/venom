@@ -159,7 +159,6 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
             if (exp.as.expr_literal->specval == NULL) {
                 uint8_t const_index = add_constant(chunk, exp.as.expr_literal->dval);
                 emit_bytes(chunk, 2, OP_CONST, const_index);
-                break;
             } else {
                 if (strcmp(exp.as.expr_literal->specval, "true") == 0) {
                     emit_byte(chunk, OP_TRUE);
