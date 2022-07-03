@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "math.h"
 #include "compiler.h"
 #include "vm.h"
 #include "object.h"
@@ -197,6 +198,12 @@ do { \
             case OP_SUB: BINARY_OP(-, AS_NUM); break;
             case OP_MUL: BINARY_OP(*, AS_NUM); break;
             case OP_DIV: BINARY_OP(/, AS_NUM); break;
+            case OP_MOD: {
+                Object b = pop(vm);
+                Object a = pop(vm);
+                push(vm, AS_NUM(fmod(NUM_VAL(a), NUM_VAL(b))));
+                break;
+            }
             case OP_GT: BINARY_OP(>, AS_BOOL); break;
             case OP_LT: BINARY_OP(<, AS_BOOL); break;
             case OP_EQ: BINARY_OP(==, AS_BOOL); break;

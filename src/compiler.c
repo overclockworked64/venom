@@ -202,6 +202,8 @@ static void compile_expression(Compiler *compiler, BytecodeChunk *chunk, Express
                 emit_byte(chunk, OP_MUL);
             } else if (strcmp(exp.as.expr_binary->operator, "/") == 0) {
                 emit_byte(chunk, OP_DIV);
+            } else if (strcmp(exp.as.expr_binary->operator, "%%") == 0) {
+                emit_byte(chunk, OP_MOD);
             } else if (strcmp(exp.as.expr_binary->operator, ">") == 0) {
                 emit_byte(chunk, OP_GT);
             } else if (strcmp(exp.as.expr_binary->operator, "<") == 0) {

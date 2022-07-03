@@ -208,6 +208,7 @@ static char *operator(Token token) {
         case TOKEN_MINUS: return "-";
         case TOKEN_STAR: return "*";
         case TOKEN_SLASH: return "/";
+        case TOKEN_MOD: return "%%";
         case TOKEN_DOUBLE_EQUAL: return "==";
         case TOKEN_BANG_EQUAL: return "!=";
         case TOKEN_GREATER: return ">";
@@ -265,7 +266,7 @@ static Expression unary(Parser *parser, Tokenizer *tokenizer) {
 
 static Expression factor(Parser *parser, Tokenizer *tokenizer) {
     Expression expr = unary(parser, tokenizer);
-    while (match(parser, tokenizer, 2, TOKEN_STAR, TOKEN_SLASH)) {
+    while (match(parser, tokenizer, 3, TOKEN_STAR, TOKEN_SLASH, TOKEN_MOD)) {
         char *op = operator(parser->previous);
         Expression right = unary(parser, tokenizer);
         Expression result = { 
