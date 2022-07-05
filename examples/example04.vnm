@@ -1,6 +1,17 @@
-let x = 0;
-
-while (x < 10) {
-    print x;
-    x = x + 1;
+fn fizzbuzz() {
+    let i = 0;
+    while (i < 100) {
+        if (i % 15 == 0) {
+            print "fizzbuzz";
+        } else if (i % 5 == 0) {
+            print "buzz";
+        } else if (i % 3 == 0) {
+            print "fizz";
+        } else {
+            print i;
+        }
+        i = i + 1;
+    }
 }
+
+fizzbuzz();

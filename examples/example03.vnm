@@ -1,9 +1,10 @@
-let x = 1 - 1;
-
-if (x < 0) {
-    print 2;
-} else if (x > 0) {
-    print 0;
-} else {
-    print 1;
+fn bump(x, y) {
+    print x;
 }
+
+fn main(x, y) {
+    print x;
+}
+
+main(1, 2);
+bump(4, 5);

@@ -1,10 +1,5 @@
-let x = 1 + 2;
-
-if (x == 3) {
-    if (x == 0) {
-        print 2;
-    }
-    print 1;
-} else {
-    print 0;
+fn add_one(x, y) {
+    return y - x + 1;
 }
+
+print add_one(2, 3);
