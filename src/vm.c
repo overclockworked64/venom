@@ -79,6 +79,7 @@ do { \
             case OP_SUB: printf("OP_SUB"); break;
             case OP_MUL: printf("OP_MUL"); break;
             case OP_DIV: printf("OP_DIV"); break;
+            case OP_MOD: printf("OP_MOD"); break;
             case OP_EQ: printf("OP_EQ"); break;
             case OP_GT: printf("OP_GT"); break;
             case OP_LT: printf("OP_LT"); break;
@@ -90,6 +91,7 @@ do { \
             case OP_INVOKE: printf("OP_INVOKE"); break;
             case OP_RET: printf("OP_RET"); break;
             case OP_CONST: printf("OP_CONST"); break;
+            case OP_STR: printf("OP_STR"); break;
             case OP_SET_GLOBAL: printf("OP_SET_GLOBAL"); break;
             case OP_GET_GLOBAL: printf("OP_GET_GLOBAL"); break;
             case OP_DEEP_SET: {

@@ -287,6 +287,13 @@ void disassemble(BytecodeChunk *chunk) {
                 i++;
                 break;
             }
+            case OP_STR: {
+                uint8_t strconst_index = *++ip;
+                printf("%d: ", i);
+                printf("OP_STR, byte (idx: %d): (val: '%s')\n", strconst_index, chunk->sp[strconst_index]);
+                i++;
+                break;
+            }
             case OP_GET_GLOBAL: {
                 printf("%d: ", i);
                 printf("OP_GET_GLOBAL + byte\n");
@@ -333,6 +340,11 @@ void disassemble(BytecodeChunk *chunk) {
             case OP_DIV: {
                 printf("%d: ", i);
                 printf("OP_DIV\n");
+                break;
+            }
+            case OP_MOD: {
+                printf("%d: ", i);
+                printf("OP_MOD\n");
                 break;
             }
             case OP_EQ: {
